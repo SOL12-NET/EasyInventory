@@ -1,0 +1,104 @@
+{
+  "animateLoading": true,
+  "borderRadius": "1.5rem",
+  "bottomRow": 4,
+  "boxShadow": "none",
+  "dynamicBindingPathList": [
+    {
+      "key": "menuColor"
+    },
+    {
+      "key": "menuItems.menuItem2.label"
+    },
+    {
+      "key": "iconName"
+    },
+    {
+      "key": "label"
+    },
+    {
+      "key": "menuItems.menuItem1.label"
+    },
+    {
+      "key": "menuItems.menuItem1k5pdcbtkw.label"
+    }
+  ],
+  "dynamicPropertyPathList": [
+    {
+      "key": "iconName"
+    }
+  ],
+  "dynamicTriggerPathList": [
+    {
+      "key": "menuItems.menuItem1.onClick"
+    },
+    {
+      "key": "menuItems.menuItem2.onClick"
+    },
+    {
+      "key": "menuItems.menuItem1k5pdcbtkw.onClick"
+    }
+  ],
+  "iconAlign": "left",
+  "iconName": "{{MenuButton1.label ? '' : 'menu'}}",
+  "isCompact": false,
+  "isDisabled": false,
+  "isLoading": false,
+  "isVisible": true,
+  "key": "n7obwx68hf",
+  "label": "{{ \nappsmith.store?.userRole +\n\" @ \"+\nappsmith.store?.location }}",
+  "leftColumn": 0,
+  "menuColor": "{{appsmith.theme.colors.primaryColor}}",
+  "menuItems": {
+    "menuItem1": {
+      "iconName": "plus",
+      "id": "menuItem1",
+      "index": 0,
+      "isDisabled": false,
+      "isVisible": true,
+      "label": "{{jsActions.i18n((\"New item\"))}}",
+      "onClick": "{{jsActions.addItem();}}",
+      "widgetId": ""
+    },
+    "menuItem1k5pdcbtkw": {
+      "iconName": "refresh",
+      "id": "menuItem1k5pdcbtkw",
+      "index": 2,
+      "isDisabled": false,
+      "isVisible": true,
+      "label": "{{jsActions.i18n(\"Restart\")}}",
+      "onClick": "{{navigateTo('init', {}, 'SAME_WINDOW');}}",
+      "widgetId": "itkun8xjf8"
+    },
+    "menuItem2": {
+      "iconName": "log-out",
+      "id": "menuItem2",
+      "index": 1,
+      "isDisabled": false,
+      "isVisible": true,
+      "label": "{{jsActions.i18n(\"Change User\")}}",
+      "onClick": "{{logoutUser(\"\")}}",
+      "widgetId": ""
+    }
+  },
+  "menuItemsSource": "STATIC",
+  "menuVariant": "PRIMARY",
+  "mobileBottomRow": 5,
+  "mobileLeftColumn": 0,
+  "mobileRightColumn": 16,
+  "mobileTopRow": 1,
+  "needsErrorInfo": false,
+  "originalBottomRow": 157,
+  "originalTopRow": 153,
+  "parentColumnSpace": 6.53125,
+  "parentId": "w10002",
+  "parentRowSpace": 10,
+  "placement": "CENTER",
+  "renderMode": "CANVAS",
+  "rightColumn": 64,
+  "topRow": 0,
+  "type": "MENU_BUTTON_WIDGET",
+  "version": 1,
+  "widgetId": "hc2piyrrz7",
+  "widgetName": "MenuButton1"
+}

@@ -1,0 +1,32 @@
+{
+  "gitSyncId": "697d421ccb833269df46846c_c0a511de-3dba-42e2-8056-065372814a02",
+  "id": "init_jsInit",
+  "unpublishedCollection": {
+    "name": "jsInit",
+    "pageId": "init",
+    "pluginId": "js-plugin",
+    "pluginType": "JS",
+    "variables": [
+      {
+        "name": "BASEROW_URL",
+        "value": "'https://' + appsmith.URL.hostname + ':443'"
+      },
+      {
+        "name": "SEARCH_OPTIONS",
+        "value": "{\n  \"TAG\": {\n    \"mode\": \"tag\",\n    \"icon\": \"tag\",\n    \"placeholder\": i18n.t('home.search_placeholder_tag')\n  },\n  \"TXT\": {\n    \"mode\": \"name\",\n    \"icon\": \"search-text\",\n    \"placeholder\": i18n.t('home.search_placeholder_name')\n  }\n}"
+      },
+      {
+        "name": "completion",
+        "value": "0"
+      },
+      {
+        "name": "text",
+        "value": "'Loading'"
+      },
+      {
+        "name": "msg",
+        "value": "''"
+      }
+    ]
+  }
+}

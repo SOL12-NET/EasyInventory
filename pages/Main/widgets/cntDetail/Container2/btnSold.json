@@ -1,0 +1,77 @@
+{
+  "animateLoading": true,
+  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+  "bottomRow": 24,
+  "boxShadow": "none",
+  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+  "buttonVariant": "PRIMARY",
+  "children": [],
+  "disabledWhenInvalid": false,
+  "displayName": "Button",
+  "dynamicBindingPathList": [
+    {
+      "key": "text"
+    },
+    {
+      "key": "isVisible"
+    },
+    {
+      "key": "buttonColor"
+    },
+    {
+      "key": "borderRadius"
+    },
+    {
+      "key": "isDisabled"
+    }
+  ],
+  "dynamicPropertyPathList": [
+    {
+      "key": "isDisabled"
+    }
+  ],
+  "dynamicTriggerPathList": [
+    {
+      "key": "onClick"
+    }
+  ],
+  "hideCard": false,
+  "iconSVG": "/static/media/icon.05d209fafeb13a8569e3b4e97069d9ee.svg",
+  "isDefaultClickDisabled": true,
+  "isDeprecated": false,
+  "isDisabled": "{{ jsActions.selectedItem?.status?.value === 'SOLD'}}",
+  "isLoading": false,
+  "isVisible": "{{ ['operator','manager'].includes(appsmith.store.userRole) }}",
+  "key": "l08cse9ra3",
+  "leftColumn": 31,
+  "minWidth": 120,
+  "mobileBottomRow": 54,
+  "mobileLeftColumn": 32,
+  "mobileRightColumn": 64,
+  "mobileTopRow": 49,
+  "onClick": "{{ jsActions.setStatus('SOLD') }}",
+  "originalBottomRow": 24,
+  "originalTopRow": 19,
+  "parentColumnSpace": 4.4296875,
+  "parentId": "ybzxplwhdf",
+  "parentRowSpace": 10,
+  "placement": "CENTER",
+  "recaptchaType": "V3",
+  "renderMode": "CANVAS",
+  "resetFormOnClick": false,
+  "responsiveBehavior": "hug",
+  "rightColumn": 64,
+  "searchTags": [
+    "click",
+    "submit"
+  ],
+  "tags": [
+    "Buttons"
+  ],
+  "text": "{{jsActions.i18n('status.sold')}}",
+  "topRow": 19,
+  "type": "BUTTON_WIDGET",
+  "version": 1,
+  "widgetId": "mcwufi7am6",
+  "widgetName": "btnSold"
+}

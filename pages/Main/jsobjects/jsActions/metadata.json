@@ -1,0 +1,36 @@
+{
+  "gitSyncId": "697d421ccb833269df46846c_dfd881cf-7f77-4473-bfac-98445abc41ec",
+  "id": "Main_jsActions",
+  "unpublishedCollection": {
+    "name": "jsActions",
+    "pageId": "Main",
+    "pluginId": "js-plugin",
+    "pluginType": "JS",
+    "variables": [
+      {
+        "name": "photosShow",
+        "value": "false"
+      },
+      {
+        "name": "photosLoaded",
+        "value": "null"
+      },
+      {
+        "name": "photoSelected",
+        "value": "null"
+      },
+      {
+        "name": "resultsShow",
+        "value": "false"
+      },
+      {
+        "name": "selectedItem",
+        "value": "null"
+      },
+      {
+        "name": "selectedItemCard",
+        "value": "null"
+      }
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "animateLoading": true,
+  "borderRadius": "0px",
+  "bottomRow": 14,
+  "bottomRowBeforeCollapse": 14,
+  "boxShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+  "children": [],
+  "defaultImage": "{{appsmith.store?.company?.URLlogo}}",
+  "displayName": "Image",
+  "dynamicBindingPathList": [
+    {
+      "key": "image"
+    },
+    {
+      "key": "defaultImage"
+    }
+  ],
+  "dynamicHeight": "FIXED",
+  "dynamicPropertyPathList": [],
+  "dynamicTriggerPathList": [
+    {
+      "key": "onClick"
+    }
+  ],
+  "enableDownload": false,
+  "enableRotation": false,
+  "hideCard": false,
+  "iconSVG": "/static/media/icon.69b0f0dd810281fbd6e34fc2c3f39344.svg",
+  "image": "{{jsActions.selectedItemCard}}",
+  "imageShape": "RECTANGLE",
+  "isDeprecated": false,
+  "isLoading": false,
+  "isVisible": true,
+  "key": "4p32q1fdb6",
+  "leftColumn": 31,
+  "maxZoomLevel": 1,
+  "mobileBottomRow": 10,
+  "mobileLeftColumn": 0,
+  "mobileRightColumn": 20,
+  "mobileTopRow": 0,
+  "objectFit": "contain",
+  "onClick": "{{jsActions.toggleShowPhotos();}}",
+  "originalBottomRow": 14,
+  "originalTopRow": 0,
+  "parentColumnSpace": 12.578125,
+  "parentId": "ybzxplwhdf",
+  "parentRowSpace": 10,
+  "renderMode": "CANVAS",
+  "rightColumn": 64,
+  "tags": [
+    "Media"
+  ],
+  "topRow": 0,
+  "topRowBeforeCollapse": 0,
+  "type": "IMAGE_WIDGET",
+  "version": 1,
+  "widgetId": "ipj9ibouvu",
+  "widgetName": "imgFront"
+}

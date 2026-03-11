@@ -1,0 +1,87 @@
+{
+  "accentColor": "{{appsmith.theme.colors.primaryColor}}",
+  "animateLoading": true,
+  "borderColor": "#18181b",
+  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+  "borderWidth": "1",
+  "bottomRow": 41,
+  "children": [],
+  "defaultText": "{{ jsActions.selectedItem?.notes || '' }}",
+  "displayName": "Input",
+  "dynamicBindingPathList": [
+    {
+      "key": "defaultText"
+    },
+    {
+      "key": "accentColor"
+    },
+    {
+      "key": "borderRadius"
+    },
+    {
+      "key": "label"
+    }
+  ],
+  "dynamicHeight": "AUTO_HEIGHT",
+  "dynamicTriggerPathList": [
+    {
+      "key": "onFocusOut"
+    },
+    {
+      "key": "onBlur"
+    },
+    {
+      "key": "onSubmit"
+    }
+  ],
+  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+  "fontSize": "1rem",
+  "fontStyle": "",
+  "hideCard": false,
+  "iconSVG": "/static/media/icon.a47d6d5dbbb718c4dc4b2eb4f218c1b7.svg",
+  "inputType": "MULTI_LINE_TEXT",
+  "isDeprecated": false,
+  "isLoading": false,
+  "isVisible": true,
+  "key": "ti4y143m60",
+  "label": "{{jsActions.i18n('fields.notes')}}",
+  "leftColumn": 0,
+  "maxDynamicHeight": 9000,
+  "minDynamicHeight": 4,
+  "minWidth": 450,
+  "mobileBottomRow": 44,
+  "mobileLeftColumn": 0,
+  "mobileRightColumn": 64,
+  "mobileTopRow": 36,
+  "onBlur": "{{jsActions.setNotes(inpNotes.text);}}",
+  "onFocusOut": "{{ jsActions.saveNotesInline() }}",
+  "onSubmit": "{{jsActions.setNotes(inpNotes.text);}}",
+  "originalBottomRow": 41,
+  "originalTopRow": 30,
+  "overflow": "NONE",
+  "parentColumnSpace": 12.578125,
+  "parentId": "ybzxplwhdf",
+  "parentRowSpace": 10,
+  "renderMode": "CANVAS",
+  "responsiveBehavior": "fill",
+  "rightColumn": 64,
+  "searchTags": [
+    "typography",
+    "paragraph",
+    "label"
+  ],
+  "shouldScrollContents": true,
+  "shouldTruncate": false,
+  "tags": [
+    "Suggested",
+    "Content"
+  ],
+  "textAlign": "LEFT",
+  "textColor": "#231F20",
+  "topRow": 30,
+  "truncateButtonColor": "{{appsmith.theme.colors.primaryColor}}",
+  "type": "INPUT_WIDGET_V2",
+  "version": 1,
+  "widgetId": "i3022ftbp3",
+  "widgetName": "inpNotes"
+}

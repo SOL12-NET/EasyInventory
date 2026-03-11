@@ -1,0 +1,5 @@
+{{
+	{
+		refresh_token: appsmith.store.JWT.refresh
+	}
+}}

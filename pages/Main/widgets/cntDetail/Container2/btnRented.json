@@ -1,0 +1,77 @@
+{
+  "animateLoading": true,
+  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+  "bottomRow": 19,
+  "boxShadow": "none",
+  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+  "buttonVariant": "PRIMARY",
+  "children": [],
+  "disabledWhenInvalid": false,
+  "displayName": "Button",
+  "dynamicBindingPathList": [
+    {
+      "key": "text"
+    },
+    {
+      "key": "isVisible"
+    },
+    {
+      "key": "buttonColor"
+    },
+    {
+      "key": "borderRadius"
+    },
+    {
+      "key": "isDisabled"
+    }
+  ],
+  "dynamicPropertyPathList": [
+    {
+      "key": "isDisabled"
+    }
+  ],
+  "dynamicTriggerPathList": [
+    {
+      "key": "onClick"
+    }
+  ],
+  "hideCard": false,
+  "iconSVG": "/static/media/icon.05d209fafeb13a8569e3b4e97069d9ee.svg",
+  "isDefaultClickDisabled": true,
+  "isDeprecated": false,
+  "isDisabled": "{{ jsActions.selectedItem?.status?.value === 'RENTED'}}",
+  "isLoading": false,
+  "isVisible": "{{ ['operator','manager'].includes(appsmith.store.userRole) }}",
+  "key": "l08cse9ra3",
+  "leftColumn": 31,
+  "minWidth": 120,
+  "mobileBottomRow": 49,
+  "mobileLeftColumn": 32,
+  "mobileRightColumn": 64,
+  "mobileTopRow": 44,
+  "onClick": "{{ jsActions.setStatus('RENTED') }}",
+  "originalBottomRow": 19,
+  "originalTopRow": 14,
+  "parentColumnSpace": 4.4296875,
+  "parentId": "ybzxplwhdf",
+  "parentRowSpace": 10,
+  "placement": "CENTER",
+  "recaptchaType": "V3",
+  "renderMode": "CANVAS",
+  "resetFormOnClick": false,
+  "responsiveBehavior": "hug",
+  "rightColumn": 64,
+  "searchTags": [
+    "click",
+    "submit"
+  ],
+  "tags": [
+    "Buttons"
+  ],
+  "text": "{{\njsActions.i18n('status.rented')}}",
+  "topRow": 14,
+  "type": "BUTTON_WIDGET",
+  "version": 1,
+  "widgetId": "ueq11bew8k",
+  "widgetName": "btnRented"
+}
