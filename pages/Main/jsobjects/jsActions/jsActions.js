@@ -11,6 +11,11 @@ export default {
 		return appsmith.store?.i18n_d?.[key] || key;
 	},
 	
+	restart_if_needed() {
+		if (!appsmith.store.search)
+			navigateTo("init");
+	},
+
 	//
 	jwtGetExpiry(token) {
 		try {
