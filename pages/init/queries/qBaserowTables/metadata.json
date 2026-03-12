@@ -21,7 +21,7 @@
       "httpMethod": "GET",
       "httpVersion": "HTTP11",
       "paginationType": "NONE",
-      "path": "/api/database/tables/database/1/",
+      "path": "/api/database/tables/database/2/",
       "pluginSpecifiedTemplates": [
         {
           "value": true
