@@ -1,6 +1,6 @@
 {
-  "gitSyncId": "697d421ccb833269df46846c_ff75e1ef-102a-4a7d-8bb6-b6a920b77c2e",
-  "id": "Main_qInsertItem",
+  "gitSyncId": "697d421ccb833269df46846c_f2dbd9d4-74f5-4ce3-858f-0d2e2b9ef8c2",
+  "id": "Main_qInsertItem_v2",
   "pluginId": "restapi-plugin",
   "pluginType": "API",
   "unpublishedAction": {
@@ -16,7 +16,12 @@
       "formData": {
         "apiContentType": "application/json"
       },
-      "headers": [],
+      "headers": [
+        {
+          "key": "Authorization",
+          "value": "JWT {{appsmith.store.JWT.access}}"
+        }
+      ],
       "httpMethod": "POST",
       "paginationType": "NONE",
       "path": "/api/database/rows/table/{{appsmith.store.TID.items}}/",
@@ -41,6 +46,9 @@
       "pluginId": "restapi-plugin"
     },
     "dynamicBindingPathList": [
+      {
+        "key": "headers[0].value"
+      },
       {
         "key": "path"
       }
