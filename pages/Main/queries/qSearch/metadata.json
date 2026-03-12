@@ -10,7 +10,12 @@
       "formData": {
         "apiContentType": "none"
       },
-      "headers": [],
+      "headers": [
+        {
+          "key": "Authorization",
+          "value": "JWT {{appsmith.store.JWT.access}}"
+        }
+      ],
       "httpMethod": "GET",
       "paginationType": "NONE",
       "path": "/api/database/rows/table/{{appsmith.store.TID.items}}/",
@@ -39,6 +44,9 @@
       "pluginId": "restapi-plugin"
     },
     "dynamicBindingPathList": [
+      {
+        "key": "headers[0].value"
+      },
       {
         "key": "path"
       },

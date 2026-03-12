@@ -23,7 +23,12 @@
       "formData": {
         "apiContentType": "multipart/form-data"
       },
-      "headers": [],
+      "headers": [
+        {
+          "key": "Authorization",
+          "value": "JWT {{appsmith.store.JWT.access}}"
+        }
+      ],
       "httpMethod": "POST",
       "paginationType": "NONE",
       "path": "/api/user-files/upload-file/",

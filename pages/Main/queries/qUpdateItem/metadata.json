@@ -16,7 +16,12 @@
       "formData": {
         "apiContentType": "application/json"
       },
-      "headers": [],
+      "headers": [
+        {
+          "key": "Authorization",
+          "value": "JWT {{appsmith.store.JWT.access}}"
+        }
+      ],
       "httpMethod": "PATCH",
       "paginationType": "NONE",
       "path": "/api/database/rows/table/{{appsmith.store.TID.items}}/{{jsActions.selectedItem?.id}}/",
@@ -41,6 +46,9 @@
       "pluginId": "restapi-plugin"
     },
     "dynamicBindingPathList": [
+      {
+        "key": "headers[0].value"
+      },
       {
         "key": "path"
       }
