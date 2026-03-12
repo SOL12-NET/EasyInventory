@@ -373,7 +373,7 @@ export default {
       at: new Date().toISOString(),
 			item: appsmith.store?.selectedItem?.id,
     };
-    const resolution = await this.runWithAuth(qInsertItem, action_insert);
+    const resolution = await this.runWithAuth(qInsertAction, action_insert);
 		return resolution;
 	},
 	
