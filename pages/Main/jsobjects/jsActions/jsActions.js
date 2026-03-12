@@ -385,7 +385,7 @@ export default {
 
 		// create item
 		const new_item = await this.runWithAuth(
-			qInsertAction, 
+			qInsertItem, 
 			{ 
 				name: "",
 				last_action: action_create.id,
