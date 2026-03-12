@@ -5,6 +5,7 @@ export default {
       "Sorry! 🤨": "sorry",
       "we could not start properly! Is your connection OK?\nAnyway, we have been notified, so you can leave this page.\nYou might also refresh the page in a few minutes.": "we could not start properly! Is your connection OK?\nAnyway, we have been notified, so you can leave this page.\nYou might also refresh the page in a few minutes.",
       "Restart": "restart",
+      "Dashboard": "dashboard",
       "New item": "new item",
       "new item": "new item",
       "Change User": "change user",
@@ -52,13 +53,20 @@ export default {
       "fields.location": "location",
       "fields.last_action_at": "last action",
       "fields.last_action_by": "last by",
-      "fields.notes": "notes"
+      "fields.notes": "notes",
+      "dashboard.back": "back to items",
+      "dashboard.location_filter": "location filter",
+      "dashboard.location_hint": "leave blank for all locations",
+      "dashboard.total": "total items",
+      "dashboard.missing_front": "missing front",
+      "dashboard.truncated_note": "dashboard is limited to the first loaded rows"
     },
     "es": {
       "Loading": "cargando",
       "Sorry! 🤨": "lo sentimos",
       "we could not start properly! Is your connection OK?\nAnyway, we have been notified, so you can leave this page.\nYou might also refresh the page in a few minutes.": "No pudimos iniciar correctamente. \u00BFTu conexi\u00F3n est\u00E1 bien?\nDe todos modos, ya hemos sido notificados, puedes salir de esta p\u00E1gina.\nTambi\u00E9n puedes refrescar la p\u00E1gina en unos minutos.",
       "Restart": "reiniciar",
+      "Dashboard": "panel",
       "New item": "nuevo art\u00EDculo",
       "new item": "nuevo art\u00EDculo",
       "Change User": "cambiar usuario",
@@ -106,13 +114,20 @@ export default {
       "fields.location": "ubicaci\u00F3n",
       "fields.last_action_at": "\u00FAltima acci\u00F3n",
       "fields.last_action_by": "\u00FAltimo operador",
-      "fields.notes": "notas"
+      "fields.notes": "notas",
+      "dashboard.back": "volver a articulos",
+      "dashboard.location_filter": "filtro de ubicacion",
+      "dashboard.location_hint": "dejar vacio para todas las ubicaciones",
+      "dashboard.total": "articulos totales",
+      "dashboard.missing_front": "sin foto principal",
+      "dashboard.truncated_note": "el panel se limita a las primeras filas cargadas"
     },
     "fr": {
       "Loading": "chargement",
       "Sorry! 🤨": "d\u00E9sol\u00E9",
       "we could not start properly! Is your connection OK?\nAnyway, we have been notified, so you can leave this page.\nYou might also refresh the page in a few minutes.": "Le d\u00E9marrage a \u00E9chou\u00E9. Votre connexion est-elle correcte ?\nNous avons \u00E9t\u00E9 notifi\u00E9s, vous pouvez quitter cette page.\nVous pouvez aussi rafra\u00EEchir la page dans quelques minutes.",
       "Restart": "red\u00E9marrer",
+      "Dashboard": "tableau de bord",
       "New item": "nouvel article",
       "new item": "nouvel article",
       "Change User": "changer d'utilisateur",
@@ -160,7 +175,13 @@ export default {
       "fields.location": "lieu",
       "fields.last_action_at": "derni\u00E8re action",
       "fields.last_action_by": "derni\u00E8re action par",
-      "fields.notes": "notes"
+      "fields.notes": "notes",
+      "dashboard.back": "retour aux articles",
+      "dashboard.location_filter": "filtre de lieu",
+      "dashboard.location_hint": "laisser vide pour tous les lieux",
+      "dashboard.total": "articles totaux",
+      "dashboard.missing_front": "sans photo principale",
+      "dashboard.truncated_note": "le tableau de bord est limite aux premieres lignes chargees"
     }
   },
   defaultLocale: 'en',

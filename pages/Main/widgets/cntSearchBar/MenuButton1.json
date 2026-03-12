@@ -11,6 +11,9 @@
       "key": "menuItems.menuItem2.label"
     },
     {
+      "key": "menuItems.menuItemDashboard.label"
+    },
+    {
       "key": "iconName"
     },
     {
@@ -34,6 +37,9 @@
     },
     {
       "key": "menuItems.menuItem2.onClick"
+    },
+    {
+      "key": "menuItems.menuItemDashboard.onClick"
     },
     {
       "key": "menuItems.menuItem1k5pdcbtkw.onClick"
@@ -60,10 +66,20 @@
       "onClick": "{{jsActions.addItem();}}",
       "widgetId": ""
     },
+    "menuItemDashboard": {
+      "iconName": "stats-report",
+      "id": "menuItemDashboard",
+      "index": 1,
+      "isDisabled": false,
+      "isVisible": true,
+      "label": "{{jsActions.i18n(\"Dashboard\")}}",
+      "onClick": "{{navigateTo('Dashboard', {}, 'SAME_WINDOW');}}",
+      "widgetId": ""
+    },
     "menuItem1k5pdcbtkw": {
       "iconName": "refresh",
       "id": "menuItem1k5pdcbtkw",
-      "index": 2,
+      "index": 3,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Restart\")}}",
@@ -73,7 +89,7 @@
     "menuItem2": {
       "iconName": "log-out",
       "id": "menuItem2",
-      "index": 1,
+      "index": 2,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Change User\")}}",
