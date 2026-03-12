@@ -16,7 +16,11 @@
     }
   ],
   "dynamicHeight": "FIXED",
-  "dynamicPropertyPathList": [],
+  "dynamicPropertyPathList": [
+    {
+      "key": "onClick"
+    }
+  ],
   "dynamicTriggerPathList": [
     {
       "key": "onClick"
@@ -39,7 +43,7 @@
   "mobileRightColumn": 20,
   "mobileTopRow": 0,
   "objectFit": "contain",
-  "onClick": "{{jsActions.toggleShowPhotos();}}",
+  "onClick": "{{\njsActions.toggleShowPhotos();\njsActions.resultsShow = false;\n}}",
   "originalBottomRow": 14,
   "originalTopRow": 0,
   "parentColumnSpace": 12.578125,
