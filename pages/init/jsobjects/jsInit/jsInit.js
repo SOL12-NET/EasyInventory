@@ -1,5 +1,5 @@
 export default {
-	BASEROW_URL : 'https://' + appsmith.URL.hostname + ':443',
+	BASEROW_URL : 'https://baserow.manymakers.net',
 	SEARCH_OPTIONS : {
 		"TAG" : {
 			"mode": "tag",  

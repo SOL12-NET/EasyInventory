@@ -9,7 +9,7 @@
     "variables": [
       {
         "name": "BASEROW_URL",
-        "value": "'https://' + appsmith.URL.hostname + ':443'"
+        "value": "'https://baserow.manymakers.net'"
       },
       {
         "name": "SEARCH_OPTIONS",
