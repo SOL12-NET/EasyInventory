@@ -124,17 +124,21 @@ export default {
 		this.photoSelected = br_photo;
 	},
 	
+	getItemAction(created_action) {
+		return {
+			last_action : created_action.value.value,
+			last_action_by: created_action.actor,
+			last_action_at: created_action.at, 
+		};
+	},
+	
 	// updates an item, refreshing selectedItem from query result if refresh is true.
   async updateItem(action, query, data, refresh = false) {
     const res_ui_q = await this.runWithAuth(query, data);
 
 		// store action
 		const created_action = await this.addAction(action, refresh);
-		const item_insert = {
-			last_action : created_action.value.value,
-			last_action_by: created_action.actor,
-			last_action_at: created_action.at, 
-		};
+		const item_insert = this.getItemAction(created_action);
 		await this.runWithAuth(qUpdateItem, item_insert);
 		
 		// refresh
@@ -389,13 +393,14 @@ export default {
 			throw new Error("cannot create action.NEW_ITEM");
 
 		// create item
+		const item_action = this.getItemAction(action_create);
+		const item_default = { 
+			name: "",
+			location: appsmith.store.location,
+		}
 		const new_item = await this.runWithAuth(
 			qInsertItem, 
-			{ 
-				name: "",
-				last_action: action_create.id,
-				location: appsmith.store.location,
-			}
+			{ ...item_action, ...item_default }
 		);
 		if (!new_item?.id)
 			throw new Error("cannot create item");

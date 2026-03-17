@@ -55,7 +55,7 @@
   "tags": [
     "Buttons"
   ],
-  "text": "{{ currentItem.tag}} : {{ currentItem.name }} - {{ currentItem.status?.value }}",
+  "text": "{{ currentItem.tag}} : \n{{ currentItem.name || jsActions.i18n(\"anonymous\" )}} - \n{{ currentItem.status?.value || jsActions.i18n(\"no status\")\n}}",
   "topRow": 0,
   "type": "BUTTON_WIDGET",
   "version": 1,
