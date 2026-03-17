@@ -44,7 +44,7 @@
     ],
     "name": "qBaserowTables",
     "pageId": "init",
-    "runBehaviour": "AUTOMATIC",
+    "runBehaviour": "MANUAL",
     "userSetOnLoad": false
   }
 }
