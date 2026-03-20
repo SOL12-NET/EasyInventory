@@ -34,8 +34,8 @@
           "value": "{{jsActions.selectedItem?.id}}"
         },
         {
-          "key": "filter__is_obsolete__boolean",
-          "value": "false"
+          "key": "filter__Active__boolean",
+          "value": "true"
         }
       ],
       "timeoutInMillisecond": 10000

@@ -104,9 +104,9 @@ export default {
   },
 
 	updateSelectedItemCard() {
-		const photos = this.selectedItem?.photos;
-		const url = (photos?.length && photos.length > 0 && photos[0]?.value) ?
-					(appsmith.store.url_thumbnails + photos[0].value) :
+		const photoName = this.selectedItem?.photo_card;
+		const url = photoName ?
+					(appsmith.store.url_thumbnails + photoName) :
 					null;
 		this.selectedItemCard = url;
 	},
@@ -334,17 +334,17 @@ export default {
 		);
 	},
 	
-  async setPhotoObsolete(br_photo) {
+	async setPhotoObsolete(br_photo) {
 		const photo = br_photo || this.photoSelected;
 		if (!photo?.id)
 			throw new Error("invalid photo");
 
 		const name = photo?.photo || '';
-		const card = this.selectedItem.photos?.[0]?.value || '';
+		const card = this.selectedItem?.photo_card || '';
 
 		// update Card if 
 		if (card && name && card === name) {
-			const itemPatch = { photos: "" };
+			const itemPatch = { photo_card: "" };
 			//TODO: use next available photo
 			const item = await this.runWithAuth(qUpdateItem, itemPatch);
 			this.selectedItem = item;
@@ -363,7 +363,7 @@ export default {
   async setPhotoFront(br_photo) {
 		// also: br_photo as null => remove front
 		const photo = br_photo || this.photoSelected;
-		const itemPatch = { photos: photo.photo };
+		const itemPatch = { photo_card: photo.photo };
 		
 		await this.updateItem(
 			'PHOTO_FRONT',
