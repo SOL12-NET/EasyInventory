@@ -1,11 +1,20 @@
-![](https://raw.githubusercontent.com/appsmithorg/appsmith/release/static/appsmith_logo_primary.png)
+# EasyInventory Appsmith App
 
-This app is built using Appsmith. Turn any datasource into an internal app in minutes. Appsmith lets you drag-and-drop components to build dashboards, write logic with JavaScript objects and connect to any API, database or GraphQL source.
+This repository is the Git Sync source of truth for the EasyInventory Appsmith app.
 
-![](https://raw.githubusercontent.com/appsmithorg/appsmith/release/static/images/integrations.png)
+Current branch intent:
+- `prod_appsmith_default`: production Appsmith state for the direct-Baserow stack
+- `staging`: pre-production Appsmith state
+- `dev`: implementation branch for larger app changes before they are promoted
 
-### [Github](https://github.com/appsmithorg/appsmith) • [Docs](https://docs.appsmith.com/?utm_source=github&utm_medium=social&utm_content=appsmith_docs&utm_campaign=null&utm_term=appsmith_docs) • [Community](https://community.appsmith.com/) • [Tutorials](https://github.com/appsmithorg/appsmith/tree/update/readme#tutorials) • [Youtube](https://www.youtube.com/appsmith) • [Discord](https://discord.gg/rBTTVJp)
+The dashboard feature is specified in:
+- [`docs/dashboard-feature.md`](docs/dashboard-feature.md)
 
-##### You can visit the application using the below link
+Useful context already present in the app:
+- Main menu entry for `Dashboard`
+- i18n keys for dashboard labels
+- existing Baserow JWT/table-id bootstrap flow on `init`
 
-###### [![](https://assets.appsmith.com/git-sync/Buttons.svg) ](https://inventory.manymakers.net/applications/69b08554eacf785d60c64db2/pages/69b08554eacf785d60c64db9) [![](https://assets.appsmith.com/git-sync/Buttons2.svg)](https://inventory.manymakers.net/applications/69b08554eacf785d60c64db2/pages/69b08554eacf785d60c64db9/edit)
+Public links:
+- app: <https://inventory.manymakers.net>
+- edit: <https://inventory.manymakers.net/applications/69b08554eacf785d60c64db2/pages/69b08554eacf785d60c64db9/edit>
