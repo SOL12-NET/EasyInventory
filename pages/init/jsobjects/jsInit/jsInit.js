@@ -1,5 +1,15 @@
 export default {
 	BASEROW_URL : 'https://baserow.manymakers.net',
+	BASEROW_AUTH : {
+		local: {
+			email: 'admin@example.com',
+			password: 'change_me_admin',
+		},
+		prod: {
+			email: 'jwt@itemgr.manymakers.fr',
+			password: '>Ç¶ÒÍ`Pïe+Ò)ë@:x±N5Q9¥÷à¬)D!gÓ',
+		},
+	},
 	SEARCH_OPTIONS : {
 		"TAG" : {
 			"mode": "tag",  
@@ -36,6 +46,24 @@ export default {
 			console.error('Error decoding token:', error);
 			return null; 
 		}
+	},
+
+	isLocalRuntime() {
+		try {
+			const hostname = (
+				appsmith?.URL?.hostname ||
+				window?.location?.hostname ||
+				''
+			).toLowerCase();
+			return hostname === 'localhost' || hostname === '127.0.0.1';
+		} catch (error) {
+			console.warn('Could not resolve runtime hostname for qAuth', error);
+			return false;
+		}
+	},
+
+	getAuthPayload() {
+		return this.isLocalRuntime() ? this.BASEROW_AUTH.local : this.BASEROW_AUTH.prod;
 	},
 	
 	async jwtInit() {

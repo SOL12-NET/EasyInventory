@@ -11,7 +11,7 @@
           "value": "application/json"
         }
       ],
-      "body": "{\n  \"email\": \"jwt@itemgr.manymakers.fr\",\n  \"password\": \">Ç¶ÒÍ`Pïe+Ò)ë@:x±N5Q9¥÷à¬)D!gÓ\"\n}",
+      "body": "{{jsInit.getAuthPayload()}}",
       "encodeParamsToggle": true,
       "formData": {
         "apiContentType": "application/json"
@@ -35,7 +35,11 @@
       "name": "BaserowAPI",
       "pluginId": "restapi-plugin"
     },
-    "dynamicBindingPathList": [],
+    "dynamicBindingPathList": [
+      {
+        "key": "body"
+      }
+    ],
     "name": "qAuth",
     "pageId": "init",
     "runBehaviour": "MANUAL",
