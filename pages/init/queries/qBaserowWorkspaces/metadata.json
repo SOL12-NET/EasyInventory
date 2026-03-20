@@ -1,6 +1,6 @@
 {
-  "gitSyncId": "69a475613398a14901442049_799d4c2e-827c-49be-a760-d87193ff21fc",
-  "id": "init_qBaserowTables",
+  "gitSyncId": "69a475613398a14901442049_864224aa-7693-4f15-bd7a-794b9ecf6d1c",
+  "id": "init_qBaserowWorkspaces",
   "pluginId": "restapi-plugin",
   "pluginType": "API",
   "unpublishedAction": {
@@ -21,7 +21,7 @@
       "httpMethod": "GET",
       "httpVersion": "HTTP11",
       "paginationType": "NONE",
-      "path": "/api/database/tables/database/{{appsmith.store.baserowDatabaseId}}/",
+      "path": "/api/workspaces/",
       "pluginSpecifiedTemplates": [
         {
           "value": true
@@ -40,12 +40,9 @@
     "dynamicBindingPathList": [
       {
         "key": "headers[0].value"
-      },
-      {
-        "key": "path"
       }
     ],
-    "name": "qBaserowTables",
+    "name": "qBaserowWorkspaces",
     "pageId": "init",
     "runBehaviour": "MANUAL",
     "userSetOnLoad": false

@@ -1,5 +1,7 @@
 export default {
 	BASEROW_URL : 'https://baserow.manymakers.net',
+	WORKSPACE_NAME: 'RentalMVP',
+	DATABASE_NAME: 'RentalMVP',
 	BASEROW_AUTH : {
 		local: {
 			email: 'admin@example.com',
@@ -65,6 +67,20 @@ export default {
 	getAuthPayload() {
 		return this.isLocalRuntime() ? this.BASEROW_AUTH.local : this.BASEROW_AUTH.prod;
 	},
+
+	findWorkspaceId(workspaces) {
+		const workspace = (workspaces || []).find((entry) => entry?.name === this.WORKSPACE_NAME);
+		if (!workspace?.id)
+			throw new Error(`Workspace not found: ${this.WORKSPACE_NAME}`);
+		return workspace.id;
+	},
+
+	findDatabaseId(applications) {
+		const database = (applications || []).find((entry) => entry?.name === this.DATABASE_NAME);
+		if (!database?.id)
+			throw new Error(`Database not found: ${this.DATABASE_NAME}`);
+		return database.id;
+	},
 	
 	async jwtInit() {
 		// baserow JWT token
@@ -114,6 +130,11 @@ export default {
 		try {
 			await this.jwtInit();
 			this.completion = 30;
+
+			await qBaserowWorkspaces.run();
+			await storeValue('baserowWorkspaceId', this.findWorkspaceId(qBaserowWorkspaces.data));
+			await qBaserowApplications.run();
+			await storeValue('baserowDatabaseId', this.findDatabaseId(qBaserowApplications.data));
 			
 			// Baserow IDs
 			await qBaserowTables.run();

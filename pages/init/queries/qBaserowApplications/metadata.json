@@ -1,6 +1,6 @@
 {
-  "gitSyncId": "69a475613398a14901442049_799d4c2e-827c-49be-a760-d87193ff21fc",
-  "id": "init_qBaserowTables",
+  "gitSyncId": "69a475613398a14901442049_6c01be95-8289-4718-b420-f0f7e21d7762",
+  "id": "init_qBaserowApplications",
   "pluginId": "restapi-plugin",
   "pluginType": "API",
   "unpublishedAction": {
@@ -21,7 +21,7 @@
       "httpMethod": "GET",
       "httpVersion": "HTTP11",
       "paginationType": "NONE",
-      "path": "/api/database/tables/database/{{appsmith.store.baserowDatabaseId}}/",
+      "path": "/api/applications/workspace/{{appsmith.store.baserowWorkspaceId}}/",
       "pluginSpecifiedTemplates": [
         {
           "value": true
@@ -45,7 +45,7 @@
         "key": "path"
       }
     ],
-    "name": "qBaserowTables",
+    "name": "qBaserowApplications",
     "pageId": "init",
     "runBehaviour": "MANUAL",
     "userSetOnLoad": false
