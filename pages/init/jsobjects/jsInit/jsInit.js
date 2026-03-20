@@ -68,7 +68,7 @@ export default {
 	
 	async jwtInit() {
 		// baserow JWT token
-		const result = await qAuth.run();
+		const result = await qAuthRuntime.run();
 		if (result?.access_token && result?.refresh_token)
 			await storeValue('JWT', {
 				access: result.access_token,

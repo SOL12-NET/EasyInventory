@@ -1,4 +1,0 @@
-{
-  "email": "jwt@itemgr.manymakers.fr",
-  "password": ">Ç¶ÒÍ`Pïe+Ò)ë@:x±N5Q9¥÷à¬)D!gÓ"
-}
