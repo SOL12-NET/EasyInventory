@@ -82,17 +82,19 @@ export default {
 		return this.isLocalRuntime() ? this.BASEROW_HOSTS.local : this.BASEROW_HOSTS.prod;
 	},
 
-	findWorkspaceId(workspaces) {
-		const workspace = (workspaces || []).find((entry) => entry?.name === this.WORKSPACE_NAME);
+	findDBWorkspaceId(workspaces) {
+		const name = this.WORKSPACE_NAME;
+		const workspace = (workspaces || []).find((entry) => entry?.name === name);
 		if (!workspace?.id)
-			throw new Error(`Workspace not found: ${this.WORKSPACE_NAME}`);
+			throw new Error(`Workspace not found: ${name}`);
 		return workspace.id;
 	},
 
 	findDatabaseId(applications) {
-		const database = (applications || []).find((entry) => entry?.name === this.DATABASE_NAME);
+		const name = appsmith.workspaceName;
+		const database = (applications || []).find((entry) => entry?.name === name);
 		if (!database?.id)
-			throw new Error(`Database not found: ${this.DATABASE_NAME}`);
+			throw new Error(`Database not found: ${name}`);
 		return database.id;
 	},
 
@@ -108,7 +110,7 @@ export default {
 
 	async discoverDBInfo() {
 		const workspaces = await qBaserowWorkspaces.run();
-		const workspaceId = this.findWorkspaceId(workspaces);
+		const workspaceId = this.findDBWorkspaceId(workspaces);
 		const applications = await qBaserowApplications.run({ workspaceId });
 		const databaseId = this.findDatabaseId(applications);
 		const tables = await qBaserowTables.run({ databaseId });

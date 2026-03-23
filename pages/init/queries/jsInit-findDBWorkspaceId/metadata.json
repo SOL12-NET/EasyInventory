@@ -1,6 +1,6 @@
 {
   "gitSyncId": "69bda4409660aa3a71f7bf8b_411a92eb-afb1-4051-b09c-698a030dc5c4",
-  "id": "init_jsInit.findWorkspaceId",
+  "id": "init_jsInit.findDBWorkspaceId",
   "pluginId": "js-plugin",
   "pluginType": "JS",
   "unpublishedAction": {
@@ -26,8 +26,8 @@
         "key": "body"
       }
     ],
-    "fullyQualifiedName": "jsInit.findWorkspaceId",
-    "name": "findWorkspaceId",
+    "fullyQualifiedName": "jsInit.findDBWorkspaceId",
+    "name": "findDBWorkspaceId",
     "pageId": "init",
     "runBehaviour": "MANUAL",
     "userSetOnLoad": false
