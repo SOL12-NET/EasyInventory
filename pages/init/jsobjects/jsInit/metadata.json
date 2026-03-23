@@ -8,8 +8,8 @@
     "pluginType": "JS",
     "variables": [
       {
-        "name": "BASEROW_URL",
-        "value": "'https://baserow.manymakers.net'"
+        "name": "BASEROW_HOSTS",
+        "value": "{\n  local: 'http://localhost:8080',\n  prod: 'https://baserow.manymakers.net'\n}"
       },
       {
         "name": "WORKSPACE_NAME",
@@ -25,7 +25,11 @@
       },
       {
         "name": "SEARCH_OPTIONS",
-        "value": "{\n  \"TAG\": {\n    \"mode\": \"tag\",\n    \"icon\": \"tag\",\n    \"placeholder\": i18n.t('home.search_placeholder_tag')\n  },\n  \"TXT\": {\n    \"mode\": \"name\",\n    \"icon\": \"search-text\",\n    \"placeholder\": i18n.t('home.search_placeholder_name')\n  }\n}"
+        "value": "{\n  \"TAG\": {\n    mode: \"tag\",\n    icon: \"tag\",\n    placeholder: i18n.t('home.search_placeholder_tag')\n  },\n  \"TXT\": {\n    mode: \"name\",\n    icon: \"search-text\",\n    placeholder: i18n.t('home.search_placeholder_name')\n  }\n}"
+      },
+      {
+        "name": "CATEGORIES",
+        "value": "[{\n  id: \"Appliance\"\n}, {\n  id: \"Furniture\"\n}, {\n  id: \"Tool\"\n}, {\n  id: \"Accessory\"\n}]"
       },
       {
         "name": "completion",

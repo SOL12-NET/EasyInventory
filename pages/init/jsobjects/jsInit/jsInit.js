@@ -17,16 +17,22 @@ export default {
 	},
 	SEARCH_OPTIONS : {
 		"TAG" : {
-			"mode": "tag",  
-			"icon": "tag",
-			"placeholder" : i18n.t('home.search_placeholder_tag'),
+			mode: "tag",  
+			icon: "tag",
+			placeholder : i18n.t('home.search_placeholder_tag'),
 		},
 		"TXT" : {
-			"mode": "name",
-			"icon": "search-text",
-			"placeholder": i18n.t('home.search_placeholder_name'),
+			mode: "name",
+			icon: "search-text",
+			placeholder: i18n.t('home.search_placeholder_name'),
 		}
 	},
+	CATEGORIES : [
+		{ id: "Appliance" },
+		{ id: "Furniture"},
+		{ id: "Tool"},
+		{ id: "Accessory"},
+	],
 	completion : 0,
 	text : 'Loading',
 	msg : '',
@@ -172,22 +178,30 @@ export default {
 			await storeValue('SEARCH_OPTIONS', this.SEARCH_OPTIONS);
 			await storeValue('search', this.SEARCH_OPTIONS['TAG']);
 			this.completion = 50;
+			
+			// translate and store CATEGORIES
+			const categories_localized = this.CATEGORIES.reduce(
+				(acc, category) => acc.concat( {id: category.id, name: i18n.t(category.id)} ),
+				[]
+			);
+			await storeValue("CATEGORIES", categories_localized);
+			this.completion = 60;
 
 			// load company prefrences
 			await storeValue('company', {
 				URLlogo: 'http://www.locamobi.fr/wp-content/uploads/go-x/u/07fca669-8d44-4590-a1b5-c26951f1c9bf/image-342x143.png'
 			})
-			this.completion = 60;
+			this.completion = 70;
 
 			// Baserow thumbnails URL path
 			await storeValue('url_thumbnails', 
 											 this.getPhotoURL(this.getBaserowURL(), '', "thumb"));
-			this.completion = 70;
+			this.completion = 80;
 			
 			// runtime states : TODO define in the page exports?
 			await storeValue('showItems', false);
 			await storeValue('showPhotos', false);
-			this.completion = 80;
+			this.completion = 90;
 			
 			// set complete
 			this.completion = 100;

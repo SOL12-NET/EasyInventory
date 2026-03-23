@@ -117,6 +117,8 @@ export default {
 		this.photosLoaded = null;
 		this.selectedItem = item;
 		this.updateSelectedItemCard();
+		// 
+		slctCategory.setSelectedOption(item.category);
   },
 
 	//
@@ -161,6 +163,19 @@ export default {
 		let itemPatch = { name: name };
 		return await this.updateItem(
 			'EDIT_NAME',
+			qUpdateItem,
+			itemPatch,
+			true
+		);
+	},
+	
+	async setCategory(value) {
+		if (value === this.selectedItem.category)
+			return;
+		
+		const itemPatch = { category: value };
+		return await this.updateItem(
+			'EDIT_CATEGORY',
 			qUpdateItem,
 			itemPatch,
 			true

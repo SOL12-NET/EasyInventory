@@ -4,7 +4,7 @@
   "borderColor": "#18181b",
   "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
   "borderWidth": "1",
-  "bottomRow": 41,
+  "bottomRow": 48,
   "children": [],
   "defaultText": "{{ jsActions.selectedItem?.notes || '' }}",
   "displayName": "Input",

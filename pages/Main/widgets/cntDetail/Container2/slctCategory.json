@@ -1,6 +1,6 @@
 {
   "accentColor": "{{appsmith.theme.colors.primaryColor}}",
-  "animateLoading": true,
+  "animateLoading": false,
   "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
   "bottomRow": 18,
   "boxShadow": "none",
@@ -11,24 +11,43 @@
     },
     {
       "key": "borderRadius"
+    },
+    {
+      "key": "labelText"
+    },
+    {
+      "key": "sourceData"
+    },
+    {
+      "key": "placeholderText"
     }
   ],
   "dynamicHeight": "FIXED",
   "dynamicPropertyPathList": [
     {
       "key": "sourceData"
+    },
+    {
+      "key": "optionValue"
+    },
+    {
+      "key": "onOptionChange"
     }
   ],
-  "dynamicTriggerPathList": [],
+  "dynamicTriggerPathList": [
+    {
+      "key": "onOptionChange"
+    }
+  ],
   "isDisabled": false,
-  "isFilterable": true,
+  "isFilterable": false,
   "isLoading": false,
   "isRequired": false,
   "isVisible": true,
   "key": "ed54hg3sbd",
   "labelAlignment": "left",
   "labelPosition": "Auto",
-  "labelText": "Label",
+  "labelText": "{{jsActions.i18n(\"Category\")}}",
   "labelTextSize": "0.875rem",
   "labelWidth": 5,
   "leftColumn": 0,
@@ -40,22 +59,23 @@
   "mobileRightColumn": 24,
   "mobileTopRow": 29,
   "needsErrorInfo": false,
+  "onOptionChange": "{{jsActions.setCategory(slctCategory.selectedOptionValue);}}",
   "optionLabel": "name",
-  "optionValue": "code",
+  "optionValue": "id",
   "originalBottomRow": 18,
   "originalTopRow": 11,
   "parentColumnSpace": 6.0048828125,
   "parentId": "ybzxplwhdf",
   "parentRowSpace": 10,
-  "placeholderText": "Select option",
+  "placeholderText": "{{jsActions.i18n(\"Select option\")}}",
   "renderMode": "CANVAS",
   "responsiveBehavior": "fill",
   "rightColumn": 30,
   "serverSideFiltering": false,
-  "sourceData": "[\n  {\n    \"name\": \"Blue\",\n    \"code\": \"BLUE\"\n  },\n  {\n    \"name\": \"Green\",\n    \"code\": \"GREEN\"\n  },\n  {\n    \"name\": \"Red\",\n    \"code\": \"RED\"\n  }\n]",
+  "sourceData": "{{appsmith.store.CATEGORIES}}",
   "topRow": 11,
   "type": "SELECT_WIDGET",
   "version": 1,
   "widgetId": "t3kyh59nqq",
-  "widgetName": "Select1"
+  "widgetName": "slctCategory"
 }
