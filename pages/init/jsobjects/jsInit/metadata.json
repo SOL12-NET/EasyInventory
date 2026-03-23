@@ -17,7 +17,7 @@
       },
       {
         "name": "DATABASE_NAME",
-        "value": "'RentalMVP'"
+        "value": "'LocaMobi'"
       },
       {
         "name": "BASEROW_AUTH",
