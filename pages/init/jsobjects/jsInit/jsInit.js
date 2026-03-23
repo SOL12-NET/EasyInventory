@@ -91,7 +91,7 @@ export default {
 	},
 
 	findDatabaseId(applications) {
-		const name = appsmith.workspaceName;
+		const name = appsmith.workspaceName || "default appsmith";
 		const database = (applications || []).find((entry) => entry?.name === name);
 		if (!database?.id)
 			throw new Error(`Database not found: ${name}`);
