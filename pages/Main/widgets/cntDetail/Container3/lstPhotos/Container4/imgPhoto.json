@@ -41,7 +41,7 @@
   "isVisible": "{{currentItem.Active}}",
   "key": "4p32q1fdb6",
   "leftColumn": 0,
-  "maxZoomLevel": 4,
+  "maxZoomLevel": 1,
   "mobileBottomRow": 10,
   "mobileLeftColumn": 0,
   "mobileRightColumn": 20,

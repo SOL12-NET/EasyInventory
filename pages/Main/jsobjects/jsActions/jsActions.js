@@ -117,8 +117,9 @@ export default {
 		this.photosLoaded = null;
 		this.selectedItem = item;
 		this.updateSelectedItemCard();
-		// 
-		slctCategory.setSelectedOption(item.category);
+		// update category selector
+		// resetWidget(slctCategory);
+//		slctCategory.setSelectedOption(item?.category);
   },
 
 	//

@@ -4,7 +4,7 @@
   "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
   "bottomRow": 18,
   "boxShadow": "none",
-  "defaultOptionValue": "GREEN",
+  "defaultOptionValue": "",
   "dynamicBindingPathList": [
     {
       "key": "accentColor"
@@ -20,6 +20,9 @@
     },
     {
       "key": "placeholderText"
+    },
+    {
+      "key": "labelTooltip"
     }
   ],
   "dynamicHeight": "FIXED",
@@ -47,8 +50,9 @@
   "key": "ed54hg3sbd",
   "labelAlignment": "left",
   "labelPosition": "Auto",
-  "labelText": "{{jsActions.i18n(\"Category\")}}",
+  "labelText": "{{jsActions.i18n(\"field.category\")}}",
   "labelTextSize": "0.875rem",
+  "labelTooltip": "{{jsActions.i18n(\"Assign a category\")}}",
   "labelWidth": 5,
   "leftColumn": 0,
   "maxDynamicHeight": 9000,
