@@ -15,16 +15,10 @@
       "key": "borderRadius"
     },
     {
-      "key": "iconName"
-    },
-    {
       "key": "tooltip"
     }
   ],
   "dynamicPropertyPathList": [
-    {
-      "key": "iconName"
-    },
     {
       "key": "onClick"
     }
@@ -35,20 +29,20 @@
     }
   ],
   "hideCard": false,
-  "iconName": "{{appsmith.store.search?.icon || 'error'}}",
+  "iconName": "plus",
   "iconSVG": "/static/media/icon.b08054586989b185a0801e9a34f8ad49.svg",
   "isDeprecated": false,
   "isDisabled": false,
   "isLoading": false,
   "isVisible": true,
   "key": "hnpfj2nutc",
-  "leftColumn": 57,
+  "leftColumn": 3,
   "minWidth": 50,
   "mobileBottomRow": 6,
   "mobileLeftColumn": 0,
   "mobileRightColumn": 6,
   "mobileTopRow": 0,
-  "onClick": "{{jsActions.toggleSearchModeAndRun();}}",
+  "onClick": "{{jsActions.addItem();}}",
   "originalBottomRow": 8,
   "originalTopRow": 4,
   "parentColumnSpace": 12.578125,
@@ -56,7 +50,7 @@
   "parentRowSpace": 10,
   "renderMode": "CANVAS",
   "responsiveBehavior": "hug",
-  "rightColumn": 61,
+  "rightColumn": 7,
   "searchTags": [
     "click",
     "submit"
@@ -64,10 +58,10 @@
   "tags": [
     "Buttons"
   ],
-  "tooltip": "{{jsActions.i18n(\"Toogle tag/name search\")}}",
+  "tooltip": "{{jsActions.i18n(\"New item\")}}",
   "topRow": 4,
   "type": "ICON_BUTTON_WIDGET",
   "version": 1,
-  "widgetId": "kecz3k9qiu",
-  "widgetName": "btnModeTag"
+  "widgetId": "w10003",
+  "widgetName": "btnAddItem"
 }

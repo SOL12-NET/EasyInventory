@@ -41,7 +41,7 @@
   "isVisible": "{{ ['operator','manager'].includes(appsmith.store.userRole) }}",
   "key": "k607cj91j2",
   "label": "{{jsActions.i18n('photo.add')}}",
-  "leftColumn": 1,
+  "leftColumn": 0,
   "maxFileSize": 5,
   "maxNumFiles": "3",
   "minWidth": 120,
@@ -55,7 +55,7 @@
   "parentRowSpace": 10,
   "renderMode": "CANVAS",
   "responsiveBehavior": "hug",
-  "rightColumn": 63,
+  "rightColumn": 64,
   "searchTags": [
     "upload"
   ],

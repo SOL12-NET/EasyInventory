@@ -2,7 +2,7 @@
   "animateLoading": true,
   "borderRadius": "1.5rem",
   "bottomRow": 4,
-  "boxShadow": "none",
+  "boxShadow": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
   "dynamicBindingPathList": [
     {
       "key": "menuColor"
@@ -20,9 +20,6 @@
       "key": "label"
     },
     {
-      "key": "menuItems.menuItem1.label"
-    },
-    {
       "key": "menuItems.menuItem1k5pdcbtkw.label"
     }
   ],
@@ -32,9 +29,6 @@
     }
   ],
   "dynamicTriggerPathList": [
-    {
-      "key": "menuItems.menuItem1.onClick"
-    },
     {
       "key": "menuItems.menuItem2.onClick"
     },
@@ -56,30 +50,10 @@
   "leftColumn": 0,
   "menuColor": "{{appsmith.theme.colors.primaryColor}}",
   "menuItems": {
-    "menuItem1": {
-      "iconName": "plus",
-      "id": "menuItem1",
-      "index": 0,
-      "isDisabled": false,
-      "isVisible": true,
-      "label": "{{jsActions.i18n((\"New item\"))}}",
-      "onClick": "{{jsActions.addItem();}}",
-      "widgetId": ""
-    },
-    "menuItemDashboard": {
-      "iconName": "stats-report",
-      "id": "menuItemDashboard",
-      "index": 1,
-      "isDisabled": false,
-      "isVisible": true,
-      "label": "{{jsActions.i18n(\"Dashboard\")}}",
-      "onClick": "{{navigateTo('Dashboard', {}, 'SAME_WINDOW');}}",
-      "widgetId": ""
-    },
     "menuItem1k5pdcbtkw": {
       "iconName": "refresh",
       "id": "menuItem1k5pdcbtkw",
-      "index": 3,
+      "index": 2,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Restart\")}}",
@@ -89,11 +63,21 @@
     "menuItem2": {
       "iconName": "log-out",
       "id": "menuItem2",
-      "index": 2,
+      "index": 1,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Change User\")}}",
       "onClick": "{{logoutUser(\"\")}}",
+      "widgetId": ""
+    },
+    "menuItemDashboard": {
+      "iconName": "chart",
+      "id": "menuItemDashboard",
+      "index": 0,
+      "isDisabled": false,
+      "isVisible": true,
+      "label": "{{jsActions.i18n(\"Dashboard\")}}",
+      "onClick": "{{navigateTo('Dashboard', {}, 'SAME_WINDOW');}}",
       "widgetId": ""
     }
   },
