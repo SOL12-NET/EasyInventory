@@ -1,5 +1,8 @@
 export default {
-	BASEROW_URL : 'https://baserow.manymakers.net',
+	BASEROW_HOSTS : {
+		local: 'http://localhost:8080',
+		prod: 'https://baserow.manymakers.net',
+	},
 	WORKSPACE_NAME: 'RentalMVP',
 	DATABASE_NAME: 'RentalMVP',
 	BASEROW_AUTH : {
@@ -66,6 +69,10 @@ export default {
 
 	getAuthPayload() {
 		return this.isLocalRuntime() ? this.BASEROW_AUTH.local : this.BASEROW_AUTH.prod;
+	},
+
+	getBaserowURL() {
+		return this.isLocalRuntime() ? this.BASEROW_HOSTS.local : this.BASEROW_HOSTS.prod;
 	},
 
 	findWorkspaceId(workspaces) {
@@ -174,7 +181,7 @@ export default {
 
 			// Baserow thumbnails URL path
 			await storeValue('url_thumbnails', 
-											 this.getPhotoURL(this.BASEROW_URL, '', "thumb"));
+											 this.getPhotoURL(this.getBaserowURL(), '', "thumb"));
 			this.completion = 70;
 			
 			// runtime states : TODO define in the page exports?
