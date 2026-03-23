@@ -30,7 +30,7 @@
           "value": "true"
         },
         {
-          "key": "filter__item__link_row_contains",
+          "key": "filter__item__contains",
           "value": "{{jsActions.selectedItem?.id}}"
         },
         {
