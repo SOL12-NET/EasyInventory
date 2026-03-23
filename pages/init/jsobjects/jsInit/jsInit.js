@@ -81,6 +81,27 @@ export default {
 			throw new Error(`Database not found: ${this.DATABASE_NAME}`);
 		return database.id;
 	},
+
+	buildDBInfo(workspaceId, databaseId, tables) {
+		return (tables || []).reduce((acc, table) => {
+			acc[table.name] = table.id;
+			return acc;
+		}, {
+			workspace_id: workspaceId,
+			database_id: databaseId,
+		});
+	},
+
+	async discoverDBInfo() {
+		const workspaces = await qBaserowWorkspaces.run();
+		const workspaceId = this.findWorkspaceId(workspaces);
+		const applications = await qBaserowApplications.run({ workspaceId });
+		const databaseId = this.findDatabaseId(applications);
+		const tables = await qBaserowTables.run({ databaseId });
+		if (!tables)
+			throw new Error("DB handshake");
+		return this.buildDBInfo(workspaceId, databaseId, tables);
+	},
 	
 	async jwtInit() {
 		// baserow JWT token
@@ -131,20 +152,7 @@ export default {
 			await this.jwtInit();
 			this.completion = 30;
 
-			await qBaserowWorkspaces.run();
-			await storeValue('baserowWorkspaceId', this.findWorkspaceId(qBaserowWorkspaces.data));
-			await qBaserowApplications.run();
-			await storeValue('baserowDatabaseId', this.findDatabaseId(qBaserowApplications.data));
-			
-			// Baserow IDs
-			await qBaserowTables.run();
-			if (!qBaserowTables.data)
-				throw new Error("DB handshake");
-			await storeValue('TID', 
-											 qBaserowTables.data.reduce(
-				(acc, table) => (acc[table.name] = table.id, acc), 
-				{}
-			));
+			await storeValue('DBIDs', await this.discoverDBInfo());
 			this.completion = 40;
 
 			// load user preferences (potentially overriden later)

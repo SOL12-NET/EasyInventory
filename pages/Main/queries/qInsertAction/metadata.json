@@ -24,7 +24,7 @@
       ],
       "httpMethod": "POST",
       "paginationType": "NONE",
-      "path": "/api/database/rows/table/{{appsmith.store.TID.actions}}/",
+      "path": "/api/database/rows/table/{{appsmith.store.DBIDs.actions}}/",
       "pluginSpecifiedTemplates": [
         {
           "value": false

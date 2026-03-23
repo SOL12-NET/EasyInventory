@@ -24,7 +24,7 @@
       ],
       "httpMethod": "PATCH",
       "paginationType": "NONE",
-      "path": "/api/database/rows/table/{{appsmith.store.TID.items}}/{{jsActions.selectedItem?.id}}/",
+      "path": "/api/database/rows/table/{{appsmith.store.DBIDs.items}}/{{jsActions.selectedItem?.id}}/",
       "pluginSpecifiedTemplates": [
         {
           "value": false

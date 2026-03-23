@@ -21,7 +21,7 @@
       "httpMethod": "GET",
       "httpVersion": "HTTP11",
       "paginationType": "NONE",
-      "path": "/api/database/rows/table/{{appsmith.store.TID.items}}/",
+      "path": "/api/database/rows/table/{{appsmith.store.DBIDs.items}}/",
       "pluginSpecifiedTemplates": [
         {
           "value": true

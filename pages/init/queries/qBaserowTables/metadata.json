@@ -21,7 +21,7 @@
       "httpMethod": "GET",
       "httpVersion": "HTTP11",
       "paginationType": "NONE",
-      "path": "/api/database/tables/database/{{appsmith.store.baserowDatabaseId}}/",
+      "path": "/api/database/tables/database/{{this.params.databaseId}}/",
       "pluginSpecifiedTemplates": [
         {
           "value": true
@@ -39,10 +39,10 @@
     },
     "dynamicBindingPathList": [
       {
-        "key": "headers[0].value"
+        "key": "path"
       },
       {
-        "key": "path"
+        "key": "headers[0].value"
       }
     ],
     "name": "qBaserowTables",

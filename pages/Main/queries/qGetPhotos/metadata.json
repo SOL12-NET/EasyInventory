@@ -18,7 +18,7 @@
       ],
       "httpMethod": "GET",
       "paginationType": "NONE",
-      "path": "/api/database/rows/table/{{appsmith.store.TID.photos}}/",
+      "path": "/api/database/rows/table/{{appsmith.store.DBIDs.photos}}/",
       "pluginSpecifiedTemplates": [
         {
           "value": false
