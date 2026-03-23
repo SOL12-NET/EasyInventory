@@ -44,7 +44,7 @@
   "isLoading": false,
   "isVisible": true,
   "key": "ti4y143m60",
-  "label": "{{jsActions.i18n('fields.Notes')}}",
+  "label": "{{jsActions.capitalizeI18n('fields.notes')}}",
   "leftColumn": 0,
   "maxDynamicHeight": 9000,
   "minDynamicHeight": 4,

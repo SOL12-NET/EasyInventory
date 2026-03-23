@@ -50,7 +50,7 @@
   "key": "ed54hg3sbd",
   "labelAlignment": "left",
   "labelPosition": "Auto",
-  "labelText": "{{jsActions.i18n(\"field.category\")}}",
+  "labelText": "{{jsActions.capitalizeI18n(\"fields.category\")}}",
   "labelTextSize": "0.875rem",
   "labelTooltip": "{{jsActions.i18n(\"Assign a category\")}}",
   "labelWidth": 5,

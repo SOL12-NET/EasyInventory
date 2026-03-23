@@ -10,6 +10,11 @@ export default {
 	i18n(key) {
 		return appsmith.store?.i18n_d?.[key] || key;
 	},
+
+	capitalizeI18n(key) {
+		const text = this.i18n(key);
+		return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+	},
 	
 	restart_if_needed() {
 		if (!appsmith.store.search)

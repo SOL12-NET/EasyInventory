@@ -32,6 +32,7 @@ export default {
 		{ id: "Furniture"},
 		{ id: "Tool"},
 		{ id: "Accessory"},
+		{ id: "Other"},
 	],
 	completion : 0,
 	text : 'Loading',

@@ -47,7 +47,7 @@
   "isRequired": true,
   "isVisible": true,
   "key": "bh9t9it6fo",
-  "label": "{{jsActions.i18n('fields.name')}}",
+  "label": "{{jsActions.capitalizeI18n('fields.name')}}",
   "labelAlignment": "left",
   "labelPosition": "Top",
   "labelStyle": "",
