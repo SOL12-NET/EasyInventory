@@ -118,8 +118,7 @@ export default {
 		this.selectedItem = item;
 		this.updateSelectedItemCard();
 		// update category selector
-		// resetWidget(slctCategory);
-//		slctCategory.setSelectedOption(item?.category);
+		slctCategory.setSelectedOption(item?.category);
   },
 
 	//
