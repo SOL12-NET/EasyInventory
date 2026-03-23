@@ -11,7 +11,7 @@
           "value": "application/json"
         }
       ],
-      "body": "{{jsInit.getAuthPayload()}}",
+      "body": "{{jsInit.getAuthPayload()}}\n",
       "encodeParamsToggle": true,
       "formData": {
         "apiContentType": "application/json"
