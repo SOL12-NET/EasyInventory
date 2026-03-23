@@ -29,7 +29,7 @@
       },
       {
         "name": "CATEGORIES",
-        "value": "[{\n  id: \"Appliance\"\n}, {\n  id: \"Furniture\"\n}, {\n  id: \"Tool\"\n}, {\n  id: \"Accessory\"\n}]"
+        "value": "[{\n  id: \"Appliance\"\n}, {\n  id: \"Furniture\"\n}, {\n  id: \"Tool\"\n}, {\n  id: \"Accessory\"\n}, {\n  id: \"Other\"\n}]"
       },
       {
         "name": "completion",

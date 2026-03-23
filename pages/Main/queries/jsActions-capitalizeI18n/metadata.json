@@ -1,6 +1,6 @@
 {
-  "gitSyncId": "6997803a4e186c017ca07311_946bf3ff-aec5-45fd-8e31-dbbe8aa04b4b",
-  "id": "Main_jsActions.setStatus",
+  "gitSyncId": "69bda4409660aa3a71f7bf8b_3d5df2ae-a5bb-4f8b-97a1-880847c81fd5",
+  "id": "Main_jsActions.capitalizeI18n",
   "pluginId": "js-plugin",
   "pluginType": "JS",
   "unpublishedAction": {
@@ -8,7 +8,7 @@
       "encodeParamsToggle": true,
       "jsArguments": [
         {
-          "name": "status"
+          "name": "key"
         }
       ],
       "paginationType": "NONE",
@@ -26,8 +26,8 @@
         "key": "body"
       }
     ],
-    "fullyQualifiedName": "jsActions.setStatus",
-    "name": "setStatus",
+    "fullyQualifiedName": "jsActions.capitalizeI18n",
+    "name": "capitalizeI18n",
     "pageId": "Main",
     "runBehaviour": "MANUAL",
     "userSetOnLoad": false

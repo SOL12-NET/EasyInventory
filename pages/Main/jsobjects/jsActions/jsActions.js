@@ -1,4 +1,9 @@
 export default {
+
+	// WARNINGS:
+	// * setting restart_if_needed() to automatic would prevent Pages/Main to complete loading.
+	//
+	
 	photosShow : false,
 	photosLoaded : null,
 	photoSelected : null,
