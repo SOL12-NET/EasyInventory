@@ -4,7 +4,7 @@
   "bottomRow": 11,
   "boxShadow": "none",
   "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-  "buttonVariant": "PRIMARY",
+  "buttonVariant": "{{jsActions.getSelectedItemBtnVariant('REPAIR')}}",
   "children": [],
   "disabledWhenInvalid": false,
   "displayName": "Button",
@@ -22,12 +22,12 @@
       "key": "borderRadius"
     },
     {
-      "key": "isDisabled"
+      "key": "buttonVariant"
     }
   ],
   "dynamicPropertyPathList": [
     {
-      "key": "isDisabled"
+      "key": "buttonVariant"
     }
   ],
   "dynamicTriggerPathList": [
@@ -39,7 +39,7 @@
   "iconSVG": "/static/media/icon.05d209fafeb13a8569e3b4e97069d9ee.svg",
   "isDefaultClickDisabled": true,
   "isDeprecated": false,
-  "isDisabled": "{{ jsActions.selectedItem?.status?.value !== 'REPAIR'}}",
+  "isDisabled": false,
   "isLoading": false,
   "isVisible": "{{ ['operator','manager'].includes(appsmith.store.userRole) }}",
   "key": "l08cse9ra3",

@@ -5,7 +5,7 @@
   "bottomRowBeforeCollapse": 17,
   "boxShadow": "none",
   "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-  "buttonVariant": "SECONDARY",
+  "buttonVariant": "{{jsActions.getSelectedItemBtnVariant('DUPLICATE')}}",
   "children": [],
   "disabledWhenInvalid": false,
   "displayName": "Button",
@@ -23,12 +23,12 @@
       "key": "borderRadius"
     },
     {
-      "key": "isDisabled"
+      "key": "buttonVariant"
     }
   ],
   "dynamicPropertyPathList": [
     {
-      "key": "isDisabled"
+      "key": "buttonVariant"
     }
   ],
   "dynamicTriggerPathList": [

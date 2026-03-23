@@ -127,9 +127,13 @@ export default {
 		this.photosLoaded = null;
 		this.selectedItem = item;
 		this.updateSelectedItemCard();
-		// update category selector
+	// update category selector
 		slctCategory.setSelectedOption(item?.category);
   },
+
+	getSelectedItemBtnVariant(state) {
+		return this.selectedItem?.status?.value !== state ? 'SECONDARY' : 'PRIMARY';
+	},
 
 	//
 	selectPhoto(br_photo) {
@@ -405,7 +409,7 @@ export default {
       value: action,
       actor: appsmith.store.userRole,
       at: new Date().toISOString(),
-			item: appsmith.store?.selectedItem?.id,
+			item: this.selectedItem?.id,
     };
     const resolution = await this.runWithAuth(qInsertAction, action_insert);
 		return resolution;
@@ -422,6 +426,7 @@ export default {
 		const item_default = { 
 			name: "",
 			location: appsmith.store.location,
+			status: 'AVAILABLE',
 		}
 		const new_item = await this.runWithAuth(
 			qInsertItem, 
