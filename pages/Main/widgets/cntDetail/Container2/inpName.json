@@ -39,7 +39,7 @@
       "key": "onBlur"
     }
   ],
-  "errorMessage": "{{jsActions.i18n(\"invalid name\")}}",
+  "errorMessage": "{{jsActions.capitalizeI18n(\"error.invalid_name\")}}",
   "iconAlign": "left",
   "inputType": "TEXT",
   "isDisabled": false,
@@ -78,7 +78,7 @@
   "rightColumn": 30,
   "shouldScrollContents": true,
   "showStepArrows": false,
-  "tooltip": "{{jsActions.i18n(\"Assign a (unique) name, that you might search later.\")}}",
+  "tooltip": "{{jsActions.capitalizeI18n(\"tooltip.name\")}}",
   "topRow": 4,
   "type": "INPUT_WIDGET_V2",
   "version": 2,

@@ -184,7 +184,10 @@ export default {
 			
 			// translate and store CATEGORIES
 			const categories_localized = this.CATEGORIES.reduce(
-				(acc, category) => acc.concat( {id: category.id, name: i18n.t(category.id)} ),
+				(acc, category) => acc.concat({
+					id: category.id,
+					name: i18n.t(`category.${category.id}`),
+				}),
 				[]
 			);
 			await storeValue("CATEGORIES", categories_localized);
