@@ -197,6 +197,7 @@ export default {
 			await storeValue('company', {
 				URLlogo: 'http://www.locamobi.fr/wp-content/uploads/go-x/u/07fca669-8d44-4590-a1b5-c26951f1c9bf/image-342x143.png'
 			})
+			await qLocations.run({locationsID: appsmith.store.DBIDs.locations})
 			this.completion = 70;
 
 			// Baserow thumbnails URL path

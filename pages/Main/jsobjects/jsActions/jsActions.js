@@ -10,6 +10,8 @@ export default {
 	resultsShow : false,
 	selectedItem : null,
 	selectedItemCard : null,
+	locationManaging : false,
+	locationEditing : false,
 	
 	//
 	i18n(key) {
@@ -127,8 +129,9 @@ export default {
 		this.photosLoaded = null;
 		this.selectedItem = item;
 		this.updateSelectedItemCard();
-	// update category selector
-		slctCategory.setSelectedOption(item?.category);
+		// update category selector
+		if (item?.category)
+			slctCategory.setSelectedOption(item.category.value);
   },
 
 	getSelectedItemBtnVariant(state) {
