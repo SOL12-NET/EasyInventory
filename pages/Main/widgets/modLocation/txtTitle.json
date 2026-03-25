@@ -41,7 +41,7 @@
   "responsiveBehavior": "fill",
   "rightColumn": 55,
   "shouldTruncate": false,
-  "text": "{{jsActions.i18n(\"Update location\")}}",
+  "text": "{{jsActions.i18n(jsActions.locationManaging ? \"Manage Locations\" : \"Change Location\")}}",
   "textAlign": "CENTER",
   "textColor": "#231F20",
   "topRow": 1,

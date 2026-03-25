@@ -118,6 +118,32 @@ export default {
 			throw new Error("DB handshake");
 		return this.buildDBInfo(workspaceId, databaseId, tables);
 	},
+
+	normalizeLocations(rows) {
+		return (rows || [])
+			.filter((row) => row?.Active !== false && String(row?.value || '').trim())
+			.map((row) => ({
+				...row,
+				value: String(row.value).trim(),
+			}));
+	},
+
+	resolveInitialLocation(locations) {
+		const current = String(appsmith.store.location || '').trim();
+		return (
+			locations.find((row) => row?.value === current)?.value ||
+			locations[0]?.value ||
+			i18n.t('unset')
+		);
+	},
+
+	async loadLocations() {
+		const response = await qLocations.run({ locationsID: appsmith.store.DBIDs.locations });
+		const rows = this.normalizeLocations(response?.results || []);
+		await storeValue('locations', rows);
+		await storeValue('location', this.resolveInitialLocation(rows));
+		return rows;
+	},
 	
 	async jwtInit() {
 		// baserow JWT token
@@ -173,7 +199,6 @@ export default {
 
 			// load user preferences (potentially overriden later)
 			await storeValue('userRole', appsmith.store.userRole || 'operator');
-			await storeValue('location', 'Samoëns');
 			await storeValue('locale', 'fr');
 			this.text = i18n.t("Loading");
 			// await storeValue('i18n.t', i18n.t); // store can't hold a function
@@ -196,8 +221,8 @@ export default {
 			// load company prefrences
 			await storeValue('company', {
 				URLlogo: 'http://www.locamobi.fr/wp-content/uploads/go-x/u/07fca669-8d44-4590-a1b5-c26951f1c9bf/image-342x143.png'
-			})
-			await qLocations.run({locationsID: appsmith.store.DBIDs.locations})
+			});
+			await this.loadLocations();
 			this.completion = 70;
 
 			// Baserow thumbnails URL path

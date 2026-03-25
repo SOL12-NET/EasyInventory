@@ -13,6 +13,9 @@
     },
     {
       "key": "borderRadius"
+    },
+    {
+      "key": "text"
     }
   ],
   "dynamicTriggerPathList": [
@@ -32,7 +35,7 @@
   "mobileRightColumn": 47,
   "mobileTopRow": 18,
   "needsErrorInfo": false,
-  "onClick": "{{closeModal(modLocation.name);}}",
+  "onClick": "{{jsActions.closeLocationModal();}}",
   "originalBottomRow": 27,
   "originalTopRow": 23,
   "parentId": "0kdznbid1p",
@@ -42,7 +45,7 @@
   "resetFormOnClick": false,
   "responsiveBehavior": "hug",
   "rightColumn": 23,
-  "text": "Close",
+  "text": "{{jsActions.i18n(\"Close\")}}",
   "topRow": 23,
   "type": "BUTTON_WIDGET",
   "version": 1,

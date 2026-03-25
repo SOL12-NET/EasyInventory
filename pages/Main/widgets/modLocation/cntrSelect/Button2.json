@@ -13,6 +13,14 @@
     },
     {
       "key": "borderRadius"
+    },
+    {
+      "key": "text"
+    }
+  ],
+  "dynamicTriggerPathList": [
+    {
+      "key": "onClick"
     }
   ],
   "isDefaultClickDisabled": true,
@@ -27,6 +35,7 @@
   "mobileRightColumn": 63,
   "mobileTopRow": 18,
   "needsErrorInfo": false,
+  "onClick": "{{jsActions.confirmLocationSelection();}}",
   "originalBottomRow": 27,
   "originalTopRow": 23,
   "parentId": "0kdznbid1p",
@@ -36,7 +45,7 @@
   "resetFormOnClick": false,
   "responsiveBehavior": "hug",
   "rightColumn": 64,
-  "text": "Confirm",
+  "text": "{{jsActions.i18n(\"Confirm\")}}",
   "topRow": 23,
   "type": "BUTTON_WIDGET",
   "version": 1,

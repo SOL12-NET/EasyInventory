@@ -11,6 +11,12 @@
       "key": "menuItems.menuItem2.label"
     },
     {
+      "key": "menuItems.menuItemChangeLocation.label"
+    },
+    {
+      "key": "menuItems.menuItemManageLocations.label"
+    },
+    {
       "key": "menuItems.menuItemDashboard.label"
     },
     {
@@ -33,6 +39,12 @@
       "key": "menuItems.menuItem2.onClick"
     },
     {
+      "key": "menuItems.menuItemChangeLocation.onClick"
+    },
+    {
+      "key": "menuItems.menuItemManageLocations.onClick"
+    },
+    {
       "key": "menuItems.menuItemDashboard.onClick"
     },
     {
@@ -53,7 +65,7 @@
     "menuItem1k5pdcbtkw": {
       "iconName": "refresh",
       "id": "menuItem1k5pdcbtkw",
-      "index": 2,
+      "index": 4,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Restart\")}}",
@@ -63,11 +75,31 @@
     "menuItem2": {
       "iconName": "log-out",
       "id": "menuItem2",
-      "index": 1,
+      "index": 3,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Change User\")}}",
       "onClick": "{{logoutUser(\"\")}}",
+      "widgetId": ""
+    },
+    "menuItemChangeLocation": {
+      "iconName": "location-pin",
+      "id": "menuItemChangeLocation",
+      "index": 1,
+      "isDisabled": false,
+      "isVisible": true,
+      "label": "{{jsActions.i18n(\"Change Location\")}}",
+      "onClick": "{{jsActions.openLocationModal(false);}}",
+      "widgetId": ""
+    },
+    "menuItemManageLocations": {
+      "iconName": "edit",
+      "id": "menuItemManageLocations",
+      "index": 2,
+      "isDisabled": false,
+      "isVisible": true,
+      "label": "{{jsActions.i18n(\"Manage Locations\")}}",
+      "onClick": "{{jsActions.openLocationModal(true);}}",
       "widgetId": ""
     },
     "menuItemDashboard": {

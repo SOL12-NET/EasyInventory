@@ -1,6 +1,6 @@
 {
-  "gitSyncId": "69bda4409660aa3a71f7bf8b_d1ccd979-4746-4749-bc28-46fee5ecea77",
-  "id": "init_qLocations",
+  "gitSyncId": "697d421ccb833269df46846c_7f4d54f4-08b0-47aa-8bb0-4f664a4dc1f1",
+  "id": "Main_qLoadLocations",
   "pluginId": "restapi-plugin",
   "pluginType": "API",
   "unpublishedAction": {
@@ -19,9 +19,8 @@
         }
       ],
       "httpMethod": "GET",
-      "httpVersion": "HTTP11",
       "paginationType": "NONE",
-      "path": "/api/database/rows/table/{{this.params.locationsID}}/",
+      "path": "/api/database/rows/table/{{appsmith.store.DBIDs.locations}}/",
       "pluginSpecifiedTemplates": [
         {
           "value": true
@@ -48,20 +47,14 @@
     },
     "dynamicBindingPathList": [
       {
-        "key": "path"
-      },
-      {
         "key": "headers[0].value"
       },
       {
-        "key": "queryParameters[0].value"
-      },
-      {
-        "key": "queryParameters[1].value"
+        "key": "path"
       }
     ],
-    "name": "qLocations",
-    "pageId": "init",
+    "name": "qLoadLocations",
+    "pageId": "Main",
     "runBehaviour": "MANUAL",
     "userSetOnLoad": false
   }

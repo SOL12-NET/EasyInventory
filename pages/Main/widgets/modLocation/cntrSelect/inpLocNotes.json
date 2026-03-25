@@ -5,7 +5,7 @@
   "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
   "bottomRow": 18,
   "boxShadow": "none",
-  "defaultText": "",
+  "defaultText": "{{jsActions.getSelectedLocationNotes()}}",
   "dynamicBindingPathList": [
     {
       "key": "accentColor"
@@ -15,18 +15,21 @@
     },
     {
       "key": "label"
+    },
+    {
+      "key": "defaultText"
     }
   ],
   "dynamicHeight": "FIXED",
   "dynamicTriggerPathList": [],
   "iconAlign": "left",
   "inputType": "MULTI_LINE_TEXT",
-  "isDisabled": false,
+  "isDisabled": true,
   "isLoading": false,
   "isRequired": false,
   "isVisible": true,
   "key": "cgusnuvann",
-  "label": "{{jsActions.i18n(\"Notes\")}}",
+  "label": "{{jsActions.capitalizeI18n(\"fields.notes\")}}",
   "labelAlignment": "left",
   "labelPosition": "Top",
   "labelStyle": "",

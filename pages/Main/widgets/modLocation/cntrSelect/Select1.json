@@ -4,7 +4,7 @@
   "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
   "bottomRow": 7,
   "boxShadow": "none",
-  "defaultOptionValue": "GREEN",
+  "defaultOptionValue": "{{jsActions.getCurrentLocationId()}}",
   "dynamicBindingPathList": [
     {
       "key": "accentColor"
@@ -16,7 +16,13 @@
       "key": "labelText"
     },
     {
+      "key": "defaultOptionValue"
+    },
+    {
       "key": "sourceData"
+    },
+    {
+      "key": "placeholderText"
     }
   ],
   "dynamicHeight": "AUTO_HEIGHT",
@@ -52,14 +58,14 @@
   "mobileRightColumn": 20,
   "mobileTopRow": 6,
   "needsErrorInfo": false,
-  "optionLabel": "id",
-  "optionValue": "value",
+  "optionLabel": "value",
+  "optionValue": "id",
   "originalBottomRow": 7,
   "originalTopRow": 0,
   "parentColumnSpace": 4.5234375,
   "parentId": "0kdznbid1p",
   "parentRowSpace": 10,
-  "placeholderText": "Select option",
+  "placeholderText": "{{jsActions.i18n(\"placeholder.select_option\")}}",
   "renderMode": "CANVAS",
   "responsiveBehavior": "fill",
   "rightColumn": 64,

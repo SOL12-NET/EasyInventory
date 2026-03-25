@@ -5,7 +5,7 @@
   "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
   "bottomRow": 5,
   "boxShadow": "none",
-  "defaultText": "",
+  "defaultText": "{{jsActions.locationEditing ? jsActions.getSelectedLocationRow()?.value : \"\"}}",
   "dynamicBindingPathList": [
     {
       "key": "accentColor"
@@ -15,6 +15,9 @@
     },
     {
       "key": "label"
+    },
+    {
+      "key": "defaultText"
     }
   ],
   "dynamicHeight": "FIXED",
@@ -26,7 +29,7 @@
   "isRequired": false,
   "isVisible": true,
   "key": "cgusnuvann",
-  "label": "{{jsActions.i18n(\"\")}}",
+  "label": "{{jsActions.capitalizeI18n(\"fields.location\")}}",
   "labelAlignment": "left",
   "labelPosition": "Left",
   "labelStyle": "",

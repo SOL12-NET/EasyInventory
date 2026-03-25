@@ -31,7 +31,7 @@
   "mobileRightColumn": 64,
   "mobileTopRow": 0,
   "needsErrorInfo": false,
-  "onClick": "{{closeModal(modLocation.name);}}",
+  "onClick": "{{jsActions.closeLocationModal();}}",
   "parentId": "1xa0rhjucl",
   "renderMode": "CANVAS",
   "responsiveBehavior": "hug",

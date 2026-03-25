@@ -22,6 +22,90 @@ export default {
 		const text = this.i18n(key);
 		return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 	},
+
+	normalizeLocations(rows) {
+		return (rows || [])
+			.filter((row) => row?.Active !== false && String(row?.value || '').trim())
+			.map((row) => ({
+				...row,
+				value: String(row.value).trim(),
+			}));
+	},
+
+	getLocationRows() {
+		return appsmith.store.locations || [];
+	},
+
+	getLocationRowById(id) {
+		return this.getLocationRows().find(
+			(row) => String(row?.id) === String(id || '')
+		) || null;
+	},
+
+	getCurrentLocationRow() {
+		return this.getLocationRows().find(
+			(row) => row?.value === appsmith.store.location
+		) || null;
+	},
+
+	getCurrentLocationId() {
+		return this.getCurrentLocationRow()?.id || '';
+	},
+
+	getSelectedLocationRow() {
+		return this.getLocationRowById(Select1?.selectedOptionValue) || this.getCurrentLocationRow();
+	},
+
+	getSelectedLocationNotes() {
+		return this.getSelectedLocationRow()?.Notes || '';
+	},
+
+	async refreshLocations() {
+		const response = await this.runWithAuth(qLoadLocations);
+		const rows = this.normalizeLocations(response?.results || []);
+		await storeValue('locations', rows);
+		return rows;
+	},
+
+	openLocationModal(manage = false) {
+		this.locationManaging = !!manage;
+		this.locationEditing = false;
+		openModal(modLocation.name);
+		const currentId = this.getCurrentLocationId();
+		if (!manage && currentId)
+			Select1.setSelectedOption(currentId);
+		if (manage)
+			inpLocName.setValue('');
+	},
+
+	closeLocationModal() {
+		this.locationManaging = false;
+		this.locationEditing = false;
+		closeModal(modLocation.name);
+	},
+
+	async confirmLocationSelection() {
+		const row = this.getSelectedLocationRow();
+		await storeValue('location', row?.value || this.i18n('unset'));
+		this.closeLocationModal();
+	},
+
+	async saveLocation() {
+		const value = String(inpLocName.text || '').trim();
+		if (!value) {
+			showAlert(this.i18n('error.location_required'));
+			return;
+		}
+
+		const row = await this.runWithAuth(qInsertLocation, {
+			value,
+			Notes: '',
+			Active: true,
+		});
+		await this.refreshLocations();
+		await storeValue('location', row?.value || value);
+		this.closeLocationModal();
+	},
 	
 	restart_if_needed() {
 		if (!appsmith.store.search)
