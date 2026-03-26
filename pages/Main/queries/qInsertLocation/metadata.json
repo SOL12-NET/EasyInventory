@@ -11,7 +11,7 @@
           "value": "application/json"
         }
       ],
-      "body": "{{ this.params.payload }}",
+      "body": "\n",
       "encodeParamsToggle": true,
       "formData": {
         "apiContentType": "application/json"
