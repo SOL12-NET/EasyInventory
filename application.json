@@ -1,7 +1,7 @@
 {
   "appIsExample": false,
   "appLayout": {
-    "type": "DESKTOP"
+    "type": "TABLET_LARGE"
   },
   "applicationDetail": {
     "navigationSetting": {
@@ -35,7 +35,7 @@
     }
   ],
   "unpublishedAppLayout": {
-    "type": "DESKTOP"
+    "type": "TABLET_LARGE"
   },
   "unpublishedApplicationDetail": {
     "navigationSetting": {

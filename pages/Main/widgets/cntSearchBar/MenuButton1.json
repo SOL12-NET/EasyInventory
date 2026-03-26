@@ -14,9 +14,6 @@
       "key": "menuItems.menuItemChangeLocation.label"
     },
     {
-      "key": "menuItems.menuItemManageLocations.label"
-    },
-    {
       "key": "menuItems.menuItemDashboard.label"
     },
     {
@@ -42,9 +39,6 @@
       "key": "menuItems.menuItemChangeLocation.onClick"
     },
     {
-      "key": "menuItems.menuItemManageLocations.onClick"
-    },
-    {
       "key": "menuItems.menuItemDashboard.onClick"
     },
     {
@@ -65,7 +59,7 @@
     "menuItem1k5pdcbtkw": {
       "iconName": "refresh",
       "id": "menuItem1k5pdcbtkw",
-      "index": 4,
+      "index": 3,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Restart\")}}",
@@ -75,7 +69,7 @@
     "menuItem2": {
       "iconName": "log-out",
       "id": "menuItem2",
-      "index": 3,
+      "index": 2,
       "isDisabled": false,
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Change User\")}}",
@@ -90,16 +84,6 @@
       "isVisible": true,
       "label": "{{jsActions.i18n(\"Change Location\")}}",
       "onClick": "{{jsActions.openLocationModal(false);}}",
-      "widgetId": ""
-    },
-    "menuItemManageLocations": {
-      "iconName": "edit",
-      "id": "menuItemManageLocations",
-      "index": 2,
-      "isDisabled": false,
-      "isVisible": true,
-      "label": "{{jsActions.i18n(\"Manage Locations\")}}",
-      "onClick": "{{jsActions.openLocationModal(true);}}",
       "widgetId": ""
     },
     "menuItemDashboard": {
