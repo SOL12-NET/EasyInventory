@@ -13,10 +13,12 @@ import {
   LockKeyhole,
   MapPin,
   Menu,
+  Moon,
   PackagePlus,
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Sun,
   Warehouse,
   X,
 } from "lucide-react";
@@ -27,8 +29,10 @@ import { statusLabels, t } from "@/lib/i18n";
 import { statuses, type InventoryState, type Item, type Locale } from "@/lib/types";
 
 type View = "dashboard" | "inventory" | "locations" | "settings";
+type Theme = "light" | "dark";
 
 const storageKey = "easyinventory.saas.demo-state";
+const themeStorageKey = "easyinventory.saas.theme";
 
 function loadState() {
   if (typeof window === "undefined") return cloneDemoState();
@@ -45,6 +49,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   const [state, setState] = useState<InventoryState>(() => cloneDemoState());
   const [ready, setReady] = useState(false);
   const [locale, setLocale] = useState<Locale>("fr");
+  const [theme, setTheme] = useState<Theme>("light");
   const [view, setView] = useState<View>(isView(initialView) ? initialView : "dashboard");
   const [dashboardLocationFilter, setDashboardLocationFilter] = useState("all");
   const [selectedId, setSelectedId] = useState("item-1001");
@@ -54,12 +59,20 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   useEffect(() => {
     setState(loadState());
+    const savedTheme = window.localStorage.getItem(themeStorageKey);
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setTheme(savedTheme === "dark" || (!savedTheme && prefersDark) ? "dark" : "light");
     setReady(true);
   }, []);
 
   useEffect(() => {
     if (ready) window.localStorage.setItem(storageKey, JSON.stringify(state));
   }, [ready, state]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    if (ready) window.localStorage.setItem(themeStorageKey, theme);
+  }, [ready, theme]);
 
   const selectedItem = state.items.find((item) => item.id === selectedId) ?? state.items[0] ?? null;
   const summary = useMemo(() => summarizeInventory(state, dashboardLocationFilter), [state, dashboardLocationFilter]);
@@ -169,6 +182,19 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
               <option value="en">EN</option>
               <option value="es">ES</option>
             </select>
+            <button
+              className="theme-toggle"
+              onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+              type="button"
+              aria-label={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+              title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+            >
+              <span className="theme-toggle-track" aria-hidden="true">
+                <Sun className="theme-icon sun-icon" size={16} />
+                <Moon className="theme-icon moon-icon" size={16} />
+                <span className="theme-toggle-thumb" />
+              </span>
+            </button>
             <button className="primary-button" onClick={handleNewItem} type="button">
               <PackagePlus size={18} />
               {t(locale, "newItem")}
