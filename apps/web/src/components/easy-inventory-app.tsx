@@ -3,22 +3,22 @@
 import {
   Activity,
   BarChart3,
+  BookOpen,
   CheckCircle2,
   CircleAlert,
   CircleOff,
-  DatabaseZap,
   Edit3,
   Filter,
   Gauge,
-  Globe2,
   Layers3,
+  LineChart,
   LockKeyhole,
   MapPin,
   Menu,
   Moon,
   PackagePlus,
+  PieChart,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   Sun,
   Warehouse,
@@ -37,16 +37,25 @@ import {
   updateItem,
   updateLocation,
 } from "@/lib/inventory";
-import { statusLabels, t } from "@/lib/i18n";
+import { actionLabel, statusLabels, t } from "@/lib/i18n";
 import { can, roleLabel } from "@/lib/permissions";
-import { statuses, type InventoryState, type Item, type Locale, type Role } from "@/lib/types";
+import { statuses, type InventoryAction, type InventoryState, type Item, type ItemStatus, type Locale, type Role } from "@/lib/types";
 
-type View = "dashboard" | "inventory" | "locations" | "settings";
+type View = "dashboard" | "inventory" | "logs" | "documentation" | "locations" | "settings";
 type Theme = "light" | "dark";
+type StatusChartMode = "lines" | "pie";
 
 const storageKey = "easyinventory.saas.demo-state";
 const themeStorageKey = "easyinventory.saas.theme";
 const roleStorageKey = "easyinventory.saas.demo-role";
+const statusColors: Record<ItemStatus, string> = {
+  AVAILABLE: "#0f766e",
+  RENTED: "#2563eb",
+  REPAIR: "#d97706",
+  SOLD: "#475569",
+  LOST: "#dc2626",
+  DUPLICATE: "#94a3b8",
+};
 
 function loadState() {
   if (typeof window === "undefined") return cloneDemoState();
@@ -66,6 +75,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   const [role, setRole] = useState<Role>("manager");
   const [view, setView] = useState<View>(isView(initialView) ? initialView : "dashboard");
   const [dashboardLocationFilter, setDashboardLocationFilter] = useState("all");
+  const [statusChartMode, setStatusChartMode] = useState<StatusChartMode>("lines");
   const [selectedId, setSelectedId] = useState("item-1001");
   const [inventoryResetSignal, setInventoryResetSignal] = useState(0);
   const [navOpen, setNavOpen] = useState(false);
@@ -193,6 +203,8 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         <nav>
           {navButton("dashboard", t(locale, "dashboard"), <BarChart3 size={18} />)}
           {navButton("inventory", t(locale, "inventory"), <Layers3 size={18} />)}
+          {navButton("logs", t(locale, "logs"), <Activity size={18} />)}
+          {navButton("documentation", t(locale, "documentation"), <BookOpen size={18} />)}
           {navButton("locations", t(locale, "locations"), <MapPin size={18} />)}
           {navButton("settings", t(locale, "settings"), <ShieldCheck size={18} />)}
         </nav>
@@ -213,7 +225,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           </button>
           <div>
             <p className="eyebrow"><Sparkles size={14} /> SaaS V1</p>
-            <h1>{view === "dashboard" ? t(locale, "dashboard") : view === "inventory" ? t(locale, "inventory") : view === "locations" ? t(locale, "locations") : t(locale, "settings")}</h1>
+            <h1>{viewTitle(locale, view)}</h1>
           </div>
           <div className="topbar-actions">
             <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)} aria-label="Language">
@@ -247,9 +259,9 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             <h2>{t(locale, "appTagline")}</h2>
           </div>
           <div className="hero-badges">
-            <span><DatabaseZap size={16} /> Postgres-ready</span>
-            <span><Globe2 size={16} /> Auth0-ready</span>
-            <span><Smartphone size={16} /> Mobile-first</span>
+            <span><ShieldCheck size={16} /> {t(locale, "roleControl")}</span>
+            <span><BookOpen size={16} /> {t(locale, "guidedDocs")}</span>
+            <span><Activity size={16} /> {t(locale, "actionTrace")}</span>
           </div>
         </section>
 
@@ -263,6 +275,8 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             locationFilter={dashboardLocationFilter}
             setLocationFilter={setDashboardLocationFilter}
             setView={setView}
+            chartMode={statusChartMode}
+            setChartMode={setStatusChartMode}
           />
         )}
 
@@ -280,6 +294,17 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             deactivatePhoto={(itemId, photoId) => setState((current) => deactivatePhoto(current, itemId, photoId, role))}
           />
         )}
+
+        {view === "logs" && (
+          <LogsView
+            locale={locale}
+            state={state}
+            setSelectedId={setSelectedId}
+            setView={setView}
+          />
+        )}
+
+        {view === "documentation" && <DocumentationView />}
 
         {view === "locations" && (
           <section className="locations-admin">
@@ -361,9 +386,9 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
                 </select>
               </label>
               <ul className="check-list">
-                <li><CheckCircle2 size={17} /> Isolation organisation prete dans le schema Postgres</li>
-                <li><CheckCircle2 size={17} /> Auth0 prevu pour sessions et organisations</li>
-                <li><CheckCircle2 size={17} /> Docker Compose avec Postgres et MinIO</li>
+                <li><CheckCircle2 size={17} /> Controle des roles pour proteger les actions sensibles</li>
+                <li><CheckCircle2 size={17} /> Donnees organisees par organisation, lieux, articles et photos</li>
+                <li><CheckCircle2 size={17} /> Docker Compose avec services locaux pour les validations</li>
                 <li><CheckCircle2 size={17} /> Mode demo local utilisable sans secrets</li>
                 <li><CheckCircle2 size={17} /> Galerie, historique et permissions prets pour API future</li>
               </ul>
@@ -386,11 +411,22 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 }
 
 function isView(value: string): value is View {
-  return value === "dashboard" || value === "inventory" || value === "locations" || value === "settings";
+  return value === "dashboard" || value === "inventory" || value === "logs" || value === "documentation" || value === "locations" || value === "settings";
 }
 
 function isRole(value: string | null): value is Role {
   return value === "owner" || value === "admin" || value === "manager" || value === "operator";
+}
+
+function viewTitle(locale: Locale, view: View) {
+  return {
+    dashboard: t(locale, "dashboard"),
+    inventory: t(locale, "inventory"),
+    logs: t(locale, "logs"),
+    documentation: t(locale, "documentation"),
+    locations: t(locale, "locations"),
+    settings: t(locale, "settings"),
+  }[view];
 }
 
 function DashboardView({
@@ -400,6 +436,8 @@ function DashboardView({
   locationFilter,
   setLocationFilter,
   setView,
+  chartMode,
+  setChartMode,
 }: {
   locale: Locale;
   state: InventoryState;
@@ -407,7 +445,11 @@ function DashboardView({
   locationFilter: string;
   setLocationFilter: (value: string) => void;
   setView: (view: View) => void;
+  chartMode: StatusChartMode;
+  setChartMode: (value: StatusChartMode) => void;
 }) {
+  const pieSegments = buildStatusPieSegments(summary.byStatus, summary.total);
+
   return (
     <section className="dashboard-grid">
       <div className="panel span-2">
@@ -424,16 +466,56 @@ function DashboardView({
       <MetricCard label={t(locale, "activeLocations")} value={state.locations.filter((location) => location.active).length} icon={<MapPin size={22} />} />
 
       <div className="panel span-2">
-        <div className="panel-title"><BarChart3 size={18} /><h3>{t(locale, "status")}</h3></div>
-        <div className="status-bars">
-          {statuses.map((status) => (
-            <button className="status-bar" key={status} onClick={() => setView("inventory")} type="button">
-              <span>{statusLabels[locale][status]}</span>
-              <div><i style={{ width: `${Math.max(8, (summary.byStatus[status] / Math.max(1, summary.total)) * 100)}%` }} /></div>
-              <strong>{summary.byStatus[status]}</strong>
+        <div className="panel-title split-title">
+          <div><BarChart3 size={18} /><h3>{t(locale, "status")}</h3></div>
+          <div className="segmented-control" aria-label={t(locale, "statusChartMode")}>
+            <button className={chartMode === "lines" ? "active" : ""} onClick={() => setChartMode("lines")} type="button">
+              <LineChart size={15} />
+              {t(locale, "chartLines")}
             </button>
-          ))}
+            <button className={chartMode === "pie" ? "active" : ""} onClick={() => setChartMode("pie")} type="button">
+              <PieChart size={15} />
+              {t(locale, "chartPie")}
+            </button>
+          </div>
         </div>
+        {chartMode === "lines" ? (
+          <div className="status-bars">
+            {statuses.map((status) => {
+              const count = summary.byStatus[status];
+              const width = summary.total === 0 ? 0 : (count / summary.total) * 100;
+              return (
+                <button className={`status-bar ${count === 0 ? "is-zero" : ""}`} key={status} onClick={() => setView("inventory")} type="button">
+                  <span>{statusLabels[locale][status]}</span>
+                  <div><i style={{ width: `${width}%`, background: statusColors[status] }} /></div>
+                  <strong>{count}</strong>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="status-pie-layout">
+            <button
+              className="status-pie"
+              onClick={() => setView("inventory")}
+              style={{ background: pieSegments.length ? `conic-gradient(${pieSegments.join(", ")})` : "var(--media-bg)" }}
+              type="button"
+              aria-label={t(locale, "status")}
+            >
+              <span>{summary.total}</span>
+              <small>{t(locale, "totalItems")}</small>
+            </button>
+            <div className="status-legend">
+              {statuses.map((status) => (
+                <button key={status} onClick={() => setView("inventory")} type="button">
+                  <i style={{ background: statusColors[status] }} />
+                  <span>{statusLabels[locale][status]}</span>
+                  <strong>{summary.byStatus[status]}</strong>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="panel">
@@ -448,15 +530,207 @@ function DashboardView({
         </div>
       </div>
 
-      <div className="panel">
-        <div className="panel-title"><Activity size={18} /><h3>{t(locale, "recentActions")}</h3></div>
+      <div className="panel recent-actions-panel">
+        <button className="panel-title action-title" onClick={() => setView("logs")} type="button">
+          <span><Activity size={18} /><h3>{t(locale, "recentActions")}</h3></span>
+          <strong>{t(locale, "viewAll")}</strong>
+        </button>
         <div className="compact-list">
           {state.actions.slice(0, 5).map((action) => (
             <div key={action.id}>
-              <span>{action.type.replaceAll("_", " ")}</span>
+              <span>{actionLabel(locale, action.type)}</span>
               <strong>{new Date(action.at).toLocaleDateString()}</strong>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function buildStatusPieSegments(byStatus: Record<ItemStatus, number>, total: number) {
+  if (total <= 0) return [];
+  let cursor = 0;
+  return statuses.flatMap((status) => {
+    const count = byStatus[status];
+    if (count <= 0) return [];
+    const start = cursor;
+    const end = cursor + (count / total) * 360;
+    cursor = end;
+    return `${statusColors[status]} ${start}deg ${end}deg`;
+  });
+}
+
+function LogsView({
+  locale,
+  state,
+  setSelectedId,
+  setView,
+}: {
+  locale: Locale;
+  state: InventoryState;
+  setSelectedId: (id: string) => void;
+  setView: (view: View) => void;
+}) {
+  const actions = [...state.actions].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+  function actionContext(action: InventoryAction) {
+    const item = state.items.find((entry) => entry.id === action.itemId);
+    const location = state.locations.find((entry) => entry.id === item?.locationId);
+    return { item, location };
+  }
+
+  return (
+    <section className="logs-page">
+      <div className="panel logs-hero">
+        <div>
+          <p className="eyebrow"><Activity size={14} /> {t(locale, "logs")}</p>
+          <h2>{t(locale, "logsTitle")}</h2>
+          <p>{t(locale, "logsIntro")}</p>
+        </div>
+        <strong>{actions.length}</strong>
+      </div>
+
+      <div className="panel logs-list">
+        <div className="panel-title"><Activity size={18} /><h3>{t(locale, "recentActions")}</h3></div>
+        {actions.length === 0 && <div className="empty-state">{t(locale, "noHistory")}</div>}
+        {actions.map((action) => {
+          const { item, location } = actionContext(action);
+          return (
+            <button
+              className="log-row"
+              key={action.id}
+              onClick={() => {
+                if (item) setSelectedId(item.id);
+                setView("inventory");
+              }}
+              type="button"
+            >
+              <span className="activity-dot" aria-hidden="true" />
+              <div>
+                <strong>{actionLabel(locale, action.type)}</strong>
+                <span>{item ? `#${item.tag} - ${item.name}` : action.itemId}</span>
+              </div>
+              <div>
+                <span>{location?.name ?? t(locale, "locations")}</span>
+                <code>{action.actor}</code>
+              </div>
+              <time dateTime={action.at}>{new Date(action.at).toLocaleString()}</time>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function DocumentationView() {
+  return (
+    <section className="documentation-page">
+      <div className="doc-hero panel">
+        <p className="eyebrow"><BookOpen size={14} /> Documentation client</p>
+        <h2>Comprendre et utiliser EasyInventory</h2>
+        <p>
+          Cette documentation presente les ecrans, les controles et les bonnes pratiques pour piloter un inventaire,
+          suivre les changements et exploiter les donnees sans aide technique.
+        </p>
+      </div>
+
+      <div className="doc-layout">
+        <aside className="doc-index panel">
+          <strong>Sommaire</strong>
+          <a href="#dashboard">Tableau de bord</a>
+          <a href="#inventory">Inventaire</a>
+          <a href="#photos">Photos</a>
+          <a href="#logs">Logs</a>
+          <a href="#locations">Lieux</a>
+          <a href="#roles">Roles</a>
+          <a href="#daily">Routine</a>
+        </aside>
+
+        <div className="doc-content">
+          <article id="dashboard" className="panel doc-section">
+            <span>01</span>
+            <h3>Tableau de bord</h3>
+            <p>
+              Le tableau de bord donne une lecture immediate de l'activite: nombre total d'articles, articles sans photo
+              principale, lieux actifs et repartition par statut. Le filtre de lieu permet d'isoler un site precis sans
+              modifier les donnees.
+            </p>
+            <ul>
+              <li>Le graphique Statut dispose d'un mode Lines et d'un mode Camembert.</li>
+              <li>Une valeur a zero est affichee comme une barre vide et reste lisible dans la legende.</li>
+              <li>Le bloc Actions recentes ouvre une page de logs complete.</li>
+            </ul>
+          </article>
+
+          <article id="inventory" className="panel doc-section">
+            <span>02</span>
+            <h3>Inventaire</h3>
+            <p>
+              L'inventaire regroupe les articles sous forme de cartes. Chaque carte affiche le tag, le nom, le statut,
+              le lieu, la categorie et la derniere action connue. La recherche globale accepte les tags, noms, lieux,
+              statuts, categories et notes.
+            </p>
+            <ul>
+              <li>Les filtres reduisent la liste par lieu, statut et categorie.</li>
+              <li>Le tri permet de classer par recence, tag, nom, statut ou lieu.</li>
+              <li>Selectionner une carte ouvre le panneau detail de l'article.</li>
+            </ul>
+          </article>
+
+          <article id="photos" className="panel doc-section">
+            <span>03</span>
+            <h3>Photos et fiche article</h3>
+            <p>
+              La fiche article centralise la photo principale, la galerie, les champs editables, les statuts et
+              l'historique de l'objet. Les photos peuvent etre ajoutees, definies comme principales ou desactivees selon
+              les droits du role connecte.
+            </p>
+            <ul>
+              <li>Une photo principale manquante est signalee sur la carte et dans les indicateurs.</li>
+              <li>Les changements de nom, tag, categorie, lieu, notes et statut creent une entree d'historique.</li>
+              <li>Les images sont integrees avec un fondu afin de conserver une lecture visuelle douce.</li>
+            </ul>
+          </article>
+
+          <article id="logs" className="panel doc-section">
+            <span>04</span>
+            <h3>Logs et actions recentes</h3>
+            <p>
+              La page Logs liste les actions dans l'ordre chronologique inverse. Chaque ligne indique l'action, l'article
+              concerne, le lieu, le role acteur et la date exacte. Cliquer sur une ligne ramene directement vers l'article.
+            </p>
+          </article>
+
+          <article id="locations" className="panel doc-section">
+            <span>05</span>
+            <h3>Lieux</h3>
+            <p>
+              La page Lieux permet de maintenir les espaces de stockage, showrooms, ateliers ou zones de retour. Un lieu
+              inactif reste conserve pour l'historique mais n'est plus propose comme emplacement courant.
+            </p>
+          </article>
+
+          <article id="roles" className="panel doc-section">
+            <span>06</span>
+            <h3>Roles et permissions</h3>
+            <p>
+              Les roles structurent les responsabilites: owner et admin ont les droits complets, manager gere les
+              operations courantes, operator intervient sur les notes, statuts et photos. Les boutons non autorises sont
+              desactives pour rendre les limites explicites.
+            </p>
+          </article>
+
+          <article id="daily" className="panel doc-section">
+            <span>07</span>
+            <h3>Routine conseillee</h3>
+            <p>
+              Commencer par le tableau de bord, traiter les articles sans photo principale, controler les statuts
+              sensibles, puis ouvrir les logs pour verifier les changements recents. Cette routine garde l'inventaire
+              fiable et lisible pour les equipes terrain comme pour la direction.
+            </p>
+          </article>
         </div>
       </div>
     </section>
