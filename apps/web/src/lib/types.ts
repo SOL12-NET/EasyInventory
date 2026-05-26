@@ -68,3 +68,5 @@ export type InventorySummary = {
   byStatus: Record<ItemStatus, number>;
   byLocation: Array<{ locationId: string; name: string; count: number }>;
 };
+
+export type InventorySort = "recent" | "tag" | "name" | "status" | "location";

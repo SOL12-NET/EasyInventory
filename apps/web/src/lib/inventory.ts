@@ -1,5 +1,5 @@
 import { demoState } from "./seed";
-import { statuses, type InventoryState, type InventorySummary, type Item, type ItemStatus } from "./types";
+import { statuses, type InventorySort, type InventoryState, type InventorySummary, type Item, type ItemStatus } from "./types";
 
 export const categories = ["Appliance", "Furniture", "Tool", "Accessory", "Other"] as const;
 
@@ -28,14 +28,73 @@ export function summarizeInventory(state: InventoryState, locationId = "all"): I
   };
 }
 
-export function searchItems(state: InventoryState, query: string, locationId = "all", status: ItemStatus | "all" = "all") {
-  const needle = query.trim().toLowerCase();
-  return state.items.filter((item) => {
+export function normalizeSearchText(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+}
+
+export function getLastAction(state: InventoryState, itemId: string) {
+  return state.actions
+    .filter((action) => action.itemId === itemId)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())[0] ?? null;
+}
+
+export function buildSearchIndex(state: InventoryState, item: Item) {
+  const location = state.locations.find((entry) => entry.id === item.locationId);
+  const lastAction = getLastAction(state, item.id);
+  return normalizeSearchText([
+    item.tag,
+    item.name,
+    item.category,
+    item.status,
+    location?.name,
+    location?.notes,
+    item.notes,
+    lastAction?.type,
+    lastAction?.actor,
+  ].join(" "));
+}
+
+export function searchItems(
+  state: InventoryState,
+  query: string,
+  locationId = "all",
+  status: ItemStatus | "all" = "all",
+  category = "all",
+  sortBy: InventorySort = "recent",
+) {
+  const needle = normalizeSearchText(query);
+  const filtered = state.items.filter((item) => {
     const matchesLocation = locationId === "all" || item.locationId === locationId;
     const matchesStatus = status === "all" || item.status === status;
-    const haystack = `${item.tag} ${item.name} ${item.category} ${item.notes}`.toLowerCase();
-    const matchesQuery = !needle || haystack.includes(needle);
-    return matchesLocation && matchesStatus && matchesQuery;
+    const matchesCategory = category === "all" || item.category === category;
+    const matchesQuery = !needle || buildSearchIndex(state, item).includes(needle);
+    return matchesLocation && matchesStatus && matchesCategory && matchesQuery;
+  });
+
+  return sortInventoryItems(state, filtered, sortBy);
+}
+
+export function sortInventoryItems(state: InventoryState, items: Item[], sortBy: InventorySort) {
+  return [...items].sort((a, b) => {
+    if (sortBy === "tag") {
+      return (Number.parseInt(a.tag, 10) || 0) - (Number.parseInt(b.tag, 10) || 0);
+    }
+    if (sortBy === "name") {
+      return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    }
+    if (sortBy === "status") {
+      return a.status.localeCompare(b.status);
+    }
+    if (sortBy === "location") {
+      const locA = state.locations.find((location) => location.id === a.locationId)?.name ?? "";
+      const locB = state.locations.find((location) => location.id === b.locationId)?.name ?? "";
+      return locA.localeCompare(locB, undefined, { sensitivity: "base" }) || a.tag.localeCompare(b.tag);
+    }
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
 }
 

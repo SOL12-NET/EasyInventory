@@ -3,21 +3,17 @@
 import {
   Activity,
   BarChart3,
-  Camera,
   CheckCircle2,
-  ChevronRight,
   CircleAlert,
   DatabaseZap,
   Filter,
   Gauge,
   Globe2,
-  ImagePlus,
   Layers3,
   LockKeyhole,
   MapPin,
   Menu,
   PackagePlus,
-  Search,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -25,9 +21,10 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { addLocation, categories, cloneDemoState, createItem, getFrontPhoto, searchItems, summarizeInventory, updateItem } from "@/lib/inventory";
+import { InventoryCardsView } from "@/components/inventory-cards-view";
+import { addLocation, cloneDemoState, createItem, summarizeInventory, updateItem } from "@/lib/inventory";
 import { statusLabels, t } from "@/lib/i18n";
-import { statuses, type InventoryState, type Item, type ItemStatus, type Locale } from "@/lib/types";
+import { statuses, type InventoryState, type Item, type Locale } from "@/lib/types";
 
 type View = "dashboard" | "inventory" | "locations" | "settings";
 
@@ -44,26 +41,14 @@ function loadState() {
   }
 }
 
-function statusTone(status: ItemStatus) {
-  return {
-    AVAILABLE: "ok",
-    RENTED: "info",
-    REPAIR: "warn",
-    SOLD: "dark",
-    LOST: "danger",
-    DUPLICATE: "muted",
-  }[status];
-}
-
-export function EasyInventoryApp() {
+export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: string }) {
   const [state, setState] = useState<InventoryState>(() => cloneDemoState());
   const [ready, setReady] = useState(false);
   const [locale, setLocale] = useState<Locale>("fr");
-  const [view, setView] = useState<View>("dashboard");
-  const [query, setQuery] = useState("");
-  const [locationFilter, setLocationFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<ItemStatus | "all">("all");
+  const [view, setView] = useState<View>(isView(initialView) ? initialView : "dashboard");
+  const [dashboardLocationFilter, setDashboardLocationFilter] = useState("all");
   const [selectedId, setSelectedId] = useState("item-1001");
+  const [inventoryResetSignal, setInventoryResetSignal] = useState(0);
   const [navOpen, setNavOpen] = useState(false);
   const [newLocationName, setNewLocationName] = useState("");
 
@@ -76,13 +61,8 @@ export function EasyInventoryApp() {
     if (ready) window.localStorage.setItem(storageKey, JSON.stringify(state));
   }, [ready, state]);
 
-  const visibleItems = useMemo(
-    () => searchItems(state, query, locationFilter, statusFilter),
-    [state, query, locationFilter, statusFilter],
-  );
-  const selectedItem = state.items.find((item) => item.id === selectedId) ?? visibleItems[0] ?? state.items[0] ?? null;
-  const summary = useMemo(() => summarizeInventory(state, locationFilter), [state, locationFilter]);
-  const selectedPhoto = getFrontPhoto(state, selectedItem);
+  const selectedItem = state.items.find((item) => item.id === selectedId) ?? state.items[0] ?? null;
+  const summary = useMemo(() => summarizeInventory(state, dashboardLocationFilter), [state, dashboardLocationFilter]);
 
   function setItemPatch(patch: Partial<Item>, action = "EDIT_ITEM") {
     if (!selectedItem) return;
@@ -90,13 +70,14 @@ export function EasyInventoryApp() {
   }
 
   function handleNewItem() {
-    const locationId = locationFilter === "all" ? state.locations[0]?.id : locationFilter;
+    const locationId = state.locations[0]?.id;
     if (!locationId) return;
     setState((current) => {
       const next = createItem(current, locationId);
       setSelectedId(next.items[0]?.id ?? selectedId);
       return next;
     });
+    setInventoryResetSignal((value) => value + 1);
     setView("inventory");
   }
 
@@ -212,26 +193,19 @@ export function EasyInventoryApp() {
             locale={locale}
             state={state}
             summary={summary}
-            locationFilter={locationFilter}
-            setLocationFilter={setLocationFilter}
+            locationFilter={dashboardLocationFilter}
+            setLocationFilter={setDashboardLocationFilter}
             setView={setView}
           />
         )}
 
         {view === "inventory" && (
-          <InventoryView
+          <InventoryCardsView
             locale={locale}
             state={state}
-            query={query}
-            setQuery={setQuery}
-            locationFilter={locationFilter}
-            setLocationFilter={setLocationFilter}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            visibleItems={visibleItems}
-            selectedItem={selectedItem}
-            selectedPhoto={selectedPhoto}
             setSelectedId={setSelectedId}
+            selectedId={selectedId}
+            resetSignal={inventoryResetSignal}
             setItemPatch={setItemPatch}
             handlePhoto={handlePhoto}
           />
@@ -299,6 +273,10 @@ export function EasyInventoryApp() {
       </section>
     </main>
   );
+}
+
+function isView(value: string): value is View {
+  return value === "dashboard" || value === "inventory" || value === "locations" || value === "settings";
 }
 
 function DashboardView({
@@ -369,138 +347,6 @@ function DashboardView({
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function InventoryView({
-  locale,
-  state,
-  query,
-  setQuery,
-  locationFilter,
-  setLocationFilter,
-  statusFilter,
-  setStatusFilter,
-  visibleItems,
-  selectedItem,
-  selectedPhoto,
-  setSelectedId,
-  setItemPatch,
-  handlePhoto,
-}: {
-  locale: Locale;
-  state: InventoryState;
-  query: string;
-  setQuery: (value: string) => void;
-  locationFilter: string;
-  setLocationFilter: (value: string) => void;
-  statusFilter: ItemStatus | "all";
-  setStatusFilter: (value: ItemStatus | "all") => void;
-  visibleItems: Item[];
-  selectedItem: Item | null;
-  selectedPhoto: ReturnType<typeof getFrontPhoto>;
-  setSelectedId: (id: string) => void;
-  setItemPatch: (patch: Partial<Item>, action?: string) => void;
-  handlePhoto: (event: ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <section className="inventory-layout">
-      <div className="panel inventory-list">
-        <div className="search-row">
-          <Search size={18} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t(locale, "searchPlaceholder")} data-testid="search-input" />
-        </div>
-        <div className="filter-row">
-          <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
-            <option value="all">{t(locale, "allLocations")}</option>
-            {state.locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-          </select>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ItemStatus | "all")}>
-            <option value="all">{t(locale, "status")}</option>
-            {statuses.map((status) => <option key={status} value={status}>{statusLabels[locale][status]}</option>)}
-          </select>
-        </div>
-
-        <div className="item-list">
-          {visibleItems.length === 0 && <div className="empty-state">{t(locale, "empty")}</div>}
-          {visibleItems.map((item) => {
-            const location = state.locations.find((entry) => entry.id === item.locationId);
-            return (
-              <button className={`item-row ${selectedItem?.id === item.id ? "selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)} type="button">
-                <div>
-                  <strong>#{item.tag} · {item.name}</strong>
-                  <span>{location?.name} · {item.category}</span>
-                </div>
-                <span className={`pill ${statusTone(item.status)}`}>{statusLabels[locale][item.status]}</span>
-                <ChevronRight size={16} />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="panel detail-panel">
-        {selectedItem ? (
-          <>
-            <div className="photo-hero">
-              {selectedPhoto ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={selectedPhoto.url} alt={selectedPhoto.originalName} />
-              ) : (
-                <div className="photo-empty"><Camera size={42} /><span>{t(locale, "missingFront")}</span></div>
-              )}
-              <label className="upload-button">
-                <ImagePlus size={18} />
-                {t(locale, "addPhoto")}
-                <input type="file" accept="image/*" onChange={handlePhoto} />
-              </label>
-            </div>
-
-            <div className="detail-form">
-              <label>
-                Nom
-                <input value={selectedItem.name} onChange={(event) => setItemPatch({ name: event.target.value }, "EDIT_NAME")} />
-              </label>
-              <label>
-                Tag
-                <input value={selectedItem.tag} onChange={(event) => setItemPatch({ tag: event.target.value }, "EDIT_TAG")} />
-              </label>
-              <label>
-                {t(locale, "category")}
-                <select value={selectedItem.category} onChange={(event) => setItemPatch({ category: event.target.value }, "EDIT_CATEGORY")}>
-                  {categories.map((category) => <option key={category} value={category}>{category}</option>)}
-                </select>
-              </label>
-              <label>
-                {t(locale, "locations")}
-                <select value={selectedItem.locationId} onChange={(event) => setItemPatch({ locationId: event.target.value }, "EDIT_LOCATION")}>
-                  {state.locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-                </select>
-              </label>
-              <label className="wide-field">
-                {t(locale, "notes")}
-                <textarea value={selectedItem.notes} onChange={(event) => setItemPatch({ notes: event.target.value }, "EDIT_NOTES")} />
-              </label>
-            </div>
-
-            <div className="status-actions">
-              {statuses.map((status) => (
-                <button
-                  className={`status-button ${selectedItem.status === status ? "active" : ""}`}
-                  key={status}
-                  onClick={() => setItemPatch({ status }, `SET_${status}`)}
-                  type="button"
-                >
-                  {statusLabels[locale][status]}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="empty-state">{t(locale, "empty")}</div>
-        )}
       </div>
     </section>
   );
