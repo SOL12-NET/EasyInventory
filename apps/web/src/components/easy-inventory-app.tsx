@@ -258,11 +258,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             <p className="eyebrow"><Gauge size={14} /> {t(locale, "operatorFlow")} + {t(locale, "directorView")}</p>
             <h2>{t(locale, "appTagline")}</h2>
           </div>
-          <div className="hero-badges">
-            <span><ShieldCheck size={16} /> {t(locale, "roleControl")}</span>
-            <span><BookOpen size={16} /> {t(locale, "guidedDocs")}</span>
-            <span><Activity size={16} /> {t(locale, "actionTrace")}</span>
-          </div>
         </section>
 
         {storageError && <p className="alert-note">{t(locale, "localStorageError")}</p>}

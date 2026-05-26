@@ -297,14 +297,6 @@ html[data-theme="dark"] .moon-icon {
   color: #99f6e4;
 }
 
-.hero-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.hero-badges span,
 .pill {
   display: inline-flex;
   align-items: center;
@@ -1645,7 +1637,6 @@ textarea:disabled,
 
   .filter-row,
   .status-actions,
-  .hero-badges,
   .cards-filter-grid {
     flex-direction: column;
   }
