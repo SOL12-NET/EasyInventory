@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent } from "react";
 import { t } from "@/lib/i18n";
-import type { InventoryState, Item, Locale } from "@/lib/types";
+import type { InventoryState, Item, Locale, Role } from "@/lib/types";
 import { InventoryCard } from "./inventory-card";
 import { InventoryDetailPanel } from "./inventory-detail-panel";
 import { InventorySearchControls } from "./inventory-search-controls";
@@ -11,19 +11,25 @@ import { useInventorySearch } from "./use-inventory-search";
 export function InventoryCardsView({
   locale,
   state,
+  role,
   selectedId,
   setSelectedId,
   resetSignal,
   setItemPatch,
   handlePhoto,
+  setFrontPhoto,
+  deactivatePhoto,
 }: {
   locale: Locale;
   state: InventoryState;
+  role: Role;
   selectedId: string;
   setSelectedId: (id: string) => void;
   resetSignal: number;
   setItemPatch: (patch: Partial<Item>, action?: string) => void;
   handlePhoto: (event: ChangeEvent<HTMLInputElement>) => void;
+  setFrontPhoto: (itemId: string, photoId: string) => void;
+  deactivatePhoto: (itemId: string, photoId: string) => void;
 }) {
   const search = useInventorySearch(state);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
@@ -90,11 +96,14 @@ export function InventoryCardsView({
         <InventoryDetailPanel
           locale={locale}
           state={state}
+          role={role}
           selectedItem={selectedItem}
           mobileOpen={mobileDetailOpen}
           closeMobile={() => setMobileDetailOpen(false)}
           setItemPatch={setItemPatch}
           handlePhoto={handlePhoto}
+          setFrontPhoto={setFrontPhoto}
+          deactivatePhoto={deactivatePhoto}
         />
       </div>
     </section>

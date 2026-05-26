@@ -16,6 +16,8 @@ export type Location = {
   name: string;
   notes: string;
   active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Photo = {
@@ -36,6 +38,9 @@ export type Item = {
   locationId: string;
   notes: string;
   frontPhotoId: string | null;
+  lastAction: string | null;
+  lastActionBy: string | null;
+  lastActionAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

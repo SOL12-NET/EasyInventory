@@ -2,7 +2,7 @@
 
 import { Camera, Clock3, MapPin, Package, Tag } from "lucide-react";
 import { getFrontPhoto, getLastAction } from "@/lib/inventory";
-import { statusLabels } from "@/lib/i18n";
+import { actionLabel, statusLabels, t } from "@/lib/i18n";
 import type { InventoryState, Item, ItemStatus, Locale } from "@/lib/types";
 import { HighlightText } from "./highlight-text";
 
@@ -49,7 +49,7 @@ export function InventoryCard({
           </div>
         )}
         <span className="inventory-card-tag"><Tag size={14} /> #{item.tag}</span>
-        {!photo && <span className="inventory-card-warning">Sans photo</span>}
+        {!photo && <span className="inventory-card-warning">{t(locale, "missingFront")}</span>}
       </div>
 
       <div className="inventory-card-body">
@@ -61,7 +61,7 @@ export function InventoryCard({
         <div className="inventory-card-meta">
           <span><MapPin size={14} /><HighlightText text={location?.name ?? "Unassigned"} query={query} /></span>
           <span><Package size={14} /><HighlightText text={item.category} query={query} /></span>
-          <span><Clock3 size={14} />{lastAction?.type.replaceAll("_", " ") ?? "No action"}</span>
+          <span><Clock3 size={14} />{actionLabel(locale, lastAction?.type)}</span>
         </div>
       </div>
     </button>

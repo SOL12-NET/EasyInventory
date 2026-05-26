@@ -5,7 +5,9 @@ import {
   BarChart3,
   CheckCircle2,
   CircleAlert,
+  CircleOff,
   DatabaseZap,
+  Edit3,
   Filter,
   Gauge,
   Globe2,
@@ -24,22 +26,33 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { InventoryCardsView } from "@/components/inventory-cards-view";
-import { addLocation, cloneDemoState, createItem, summarizeInventory, updateItem } from "@/lib/inventory";
+import {
+  addLocation,
+  addPhotosToItem,
+  cloneDemoState,
+  createItem,
+  deactivatePhoto,
+  setFrontPhoto,
+  summarizeInventory,
+  updateItem,
+  updateLocation,
+} from "@/lib/inventory";
 import { statusLabels, t } from "@/lib/i18n";
-import { statuses, type InventoryState, type Item, type Locale } from "@/lib/types";
+import { can, roleLabel } from "@/lib/permissions";
+import { statuses, type InventoryState, type Item, type Locale, type Role } from "@/lib/types";
 
 type View = "dashboard" | "inventory" | "locations" | "settings";
 type Theme = "light" | "dark";
 
 const storageKey = "easyinventory.saas.demo-state";
 const themeStorageKey = "easyinventory.saas.theme";
+const roleStorageKey = "easyinventory.saas.demo-role";
 
 function loadState() {
   if (typeof window === "undefined") return cloneDemoState();
-  const saved = window.localStorage.getItem(storageKey);
-  if (!saved) return cloneDemoState();
   try {
-    return JSON.parse(saved) as InventoryState;
+    const saved = window.localStorage.getItem(storageKey);
+    return saved ? (JSON.parse(saved) as InventoryState) : cloneDemoState();
   } catch {
     return cloneDemoState();
   }
@@ -50,43 +63,64 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   const [ready, setReady] = useState(false);
   const [locale, setLocale] = useState<Locale>("fr");
   const [theme, setTheme] = useState<Theme>("light");
+  const [role, setRole] = useState<Role>("manager");
   const [view, setView] = useState<View>(isView(initialView) ? initialView : "dashboard");
   const [dashboardLocationFilter, setDashboardLocationFilter] = useState("all");
   const [selectedId, setSelectedId] = useState("item-1001");
   const [inventoryResetSignal, setInventoryResetSignal] = useState(0);
   const [navOpen, setNavOpen] = useState(false);
   const [newLocationName, setNewLocationName] = useState("");
+  const [newLocationNotes, setNewLocationNotes] = useState("");
+  const [storageError, setStorageError] = useState(false);
 
   useEffect(() => {
-    setState(loadState());
-    const savedTheme = window.localStorage.getItem(themeStorageKey);
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setTheme(savedTheme === "dark" || (!savedTheme && prefersDark) ? "dark" : "light");
-    setReady(true);
+    try {
+      setState(loadState());
+      const savedTheme = window.localStorage.getItem(themeStorageKey);
+      const savedRole = window.localStorage.getItem(roleStorageKey);
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setTheme(savedTheme === "dark" || (!savedTheme && prefersDark) ? "dark" : "light");
+      if (isRole(savedRole)) setRole(savedRole);
+    } catch {
+      setStorageError(true);
+    } finally {
+      setReady(true);
+    }
   }, []);
 
   useEffect(() => {
-    if (ready) window.localStorage.setItem(storageKey, JSON.stringify(state));
+    if (!ready) return;
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+      setStorageError(true);
+    }
   }, [ready, state]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    if (ready) window.localStorage.setItem(themeStorageKey, theme);
-  }, [ready, theme]);
+    if (!ready) return;
+    try {
+      window.localStorage.setItem(themeStorageKey, theme);
+      window.localStorage.setItem(roleStorageKey, role);
+    } catch {
+      setStorageError(true);
+    }
+  }, [ready, role, theme]);
 
   const selectedItem = state.items.find((item) => item.id === selectedId) ?? state.items[0] ?? null;
   const summary = useMemo(() => summarizeInventory(state, dashboardLocationFilter), [state, dashboardLocationFilter]);
 
   function setItemPatch(patch: Partial<Item>, action = "EDIT_ITEM") {
     if (!selectedItem) return;
-    setState((current) => updateItem(current, selectedItem.id, patch, action));
+    setState((current) => updateItem(current, selectedItem.id, patch, action, role));
   }
 
   function handleNewItem() {
-    const locationId = state.locations[0]?.id;
+    const locationId = state.locations.find((location) => location.active)?.id;
     if (!locationId) return;
     setState((current) => {
-      const next = createItem(current, locationId);
+      const next = createItem(current, locationId, role);
       setSelectedId(next.items[0]?.id ?? selectedId);
       return next;
     });
@@ -95,33 +129,29 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   }
 
   function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file || !selectedItem) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const at = new Date().toISOString();
-      const photo = {
-        id: crypto.randomUUID(),
-        itemId: selectedItem.id,
-        url: String(reader.result),
-        originalName: file.name,
-        active: true,
-        createdAt: at,
-      };
-      setState((current) => ({
-        ...current,
-        photos: [photo, ...current.photos],
-        items: current.items.map((item) =>
-          item.id === selectedItem.id ? { ...item, frontPhotoId: item.frontPhotoId ?? photo.id, updatedAt: at } : item,
-        ),
-        actions: [
-          { id: crypto.randomUUID(), itemId: selectedItem.id, type: "NEW_UPLOAD", actor: "operator", at },
-          ...current.actions,
-        ],
-      }));
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length || !selectedItem || !can(role, "add:photos")) return;
+    Promise.all(
+      files.map((file) =>
+        new Promise<{ url: string; originalName: string }>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({ url: String(reader.result), originalName: file.name });
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        }),
+      ),
+    )
+      .then((photos) => setState((current) => addPhotosToItem(current, selectedItem.id, photos, role)))
+      .catch(() => setStorageError(true));
     event.target.value = "";
+  }
+
+  function resetDemo() {
+    const next = cloneDemoState();
+    setState(next);
+    setSelectedId(next.items[0]?.id ?? "");
+    setDashboardLocationFilter("all");
+    setInventoryResetSignal((value) => value + 1);
   }
 
   function navButton(id: View, label: string, icon: React.ReactNode) {
@@ -137,6 +167,15 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         {icon}
         <span>{label}</span>
       </button>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <main className="loading-shell">
+        <Sparkles size={26} />
+        <strong>{t(locale, "loadingDemo")}</strong>
+      </main>
     );
   }
 
@@ -161,7 +200,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         <div className="sidebar-card">
           <LockKeyhole size={18} />
           <div>
-            <strong>{t(locale, "authReady")}</strong>
+            <strong>{roleLabel(role)}</strong>
             <span>{t(locale, "demoMode")}</span>
           </div>
         </div>
@@ -214,6 +253,8 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           </div>
         </section>
 
+        {storageError && <p className="alert-note">{t(locale, "localStorageError")}</p>}
+
         {view === "dashboard" && (
           <DashboardView
             locale={locale}
@@ -229,29 +270,55 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           <InventoryCardsView
             locale={locale}
             state={state}
+            role={role}
             setSelectedId={setSelectedId}
             selectedId={selectedId}
             resetSignal={inventoryResetSignal}
             setItemPatch={setItemPatch}
             handlePhoto={handlePhoto}
+            setFrontPhoto={(itemId, photoId) => setState((current) => setFrontPhoto(current, itemId, photoId, role))}
+            deactivatePhoto={(itemId, photoId) => setState((current) => deactivatePhoto(current, itemId, photoId, role))}
           />
         )}
 
         {view === "locations" && (
-          <section className="two-column locations-view">
+          <section className="locations-admin">
             <div className="panel">
-              <div className="panel-title">
-                <MapPin size={18} />
-                <h3>{t(locale, "locations")}</h3>
-              </div>
-              <div className="location-list">
+              <div className="panel-title"><MapPin size={18} /><h3>{t(locale, "locations")}</h3></div>
+              <div className="location-admin-list">
                 {state.locations.map((location) => (
-                  <article key={location.id} className="location-row">
-                    <div>
-                      <strong>{location.name}</strong>
-                      <span>{location.notes || "Aucune note"}</span>
+                  <article key={location.id} className={`location-admin-card ${!location.active ? "inactive" : ""}`}>
+                    <div className="location-admin-head">
+                      <div>
+                        <strong>{location.name}</strong>
+                        <span>{state.items.filter((item) => item.locationId === location.id).length} {t(locale, "itemCount")}</span>
+                      </div>
+                      <button
+                        className={`status-button ${location.active ? "active" : ""}`}
+                        disabled={!can(role, "edit:locations")}
+                        onClick={() => setState((current) => updateLocation(current, location.id, { active: !location.active }))}
+                        type="button"
+                      >
+                        {location.active ? <CheckCircle2 size={16} /> : <CircleOff size={16} />}
+                        {location.active ? t(locale, "active") : t(locale, "inactive")}
+                      </button>
                     </div>
-                    <span className="pill ok">{state.items.filter((item) => item.locationId === location.id).length} items</span>
+                    <label>
+                      {t(locale, "locationName")}
+                      <input
+                        disabled={!can(role, "edit:locations")}
+                        value={location.name}
+                        onChange={(event) => setState((current) => updateLocation(current, location.id, { name: event.target.value }))}
+                      />
+                    </label>
+                    <label>
+                      {t(locale, "locationNotes")}
+                      <textarea
+                        disabled={!can(role, "edit:locations")}
+                        value={location.notes}
+                        onChange={(event) => setState((current) => updateLocation(current, location.id, { notes: event.target.value }))}
+                      />
+                    </label>
                   </article>
                 ))}
               </div>
@@ -260,19 +327,23 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
               className="panel"
               onSubmit={(event) => {
                 event.preventDefault();
-                setState((current) => addLocation(current, newLocationName));
+                if (!can(role, "edit:locations")) return;
+                setState((current) => addLocation(current, newLocationName, newLocationNotes));
                 setNewLocationName("");
+                setNewLocationNotes("");
               }}
             >
-              <div className="panel-title">
-                <PackagePlus size={18} />
-                <h3>{t(locale, "addLocation")}</h3>
-              </div>
+              <div className="panel-title"><PackagePlus size={18} /><h3>{t(locale, "addLocation")}</h3></div>
               <label>
                 {t(locale, "locationName")}
-                <input value={newLocationName} onChange={(event) => setNewLocationName(event.target.value)} placeholder="Paris Nord" />
+                <input disabled={!can(role, "edit:locations")} value={newLocationName} onChange={(event) => setNewLocationName(event.target.value)} placeholder="Paris Nord" />
               </label>
-              <button className="primary-button wide" type="submit">{t(locale, "save")}</button>
+              <label>
+                {t(locale, "locationNotes")}
+                <textarea disabled={!can(role, "edit:locations")} value={newLocationNotes} onChange={(event) => setNewLocationNotes(event.target.value)} placeholder="Stock, showroom, atelier..." />
+              </label>
+              {!can(role, "edit:locations") && <p className="permission-note">{t(locale, "disabledByRole")}</p>}
+              <button className="primary-button wide" disabled={!can(role, "edit:locations")} type="submit">{t(locale, "create")}</button>
             </form>
           </section>
         )}
@@ -280,19 +351,32 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         {view === "settings" && (
           <section className="settings-grid">
             <article className="panel">
-              <div className="panel-title"><ShieldCheck size={18} /><h3>Contrôle SaaS</h3></div>
+              <div className="panel-title"><ShieldCheck size={18} /><h3>Controle SaaS</h3></div>
+              <label>
+                {t(locale, "role")}
+                <select value={role} onChange={(event) => setRole(event.target.value as Role)}>
+                  {(["owner", "admin", "manager", "operator"] as Role[]).map((entry) => (
+                    <option key={entry} value={entry}>{roleLabel(entry)}</option>
+                  ))}
+                </select>
+              </label>
               <ul className="check-list">
-                <li><CheckCircle2 size={17} /> Isolation organisation prête dans le schéma Postgres</li>
-                <li><CheckCircle2 size={17} /> Auth0 prévu pour sessions et organisations</li>
+                <li><CheckCircle2 size={17} /> Isolation organisation prete dans le schema Postgres</li>
+                <li><CheckCircle2 size={17} /> Auth0 prevu pour sessions et organisations</li>
                 <li><CheckCircle2 size={17} /> Docker Compose avec Postgres et MinIO</li>
-                <li><CheckCircle2 size={17} /> Mode démo local utilisable sans secrets</li>
+                <li><CheckCircle2 size={17} /> Mode demo local utilisable sans secrets</li>
+                <li><CheckCircle2 size={17} /> Galerie, historique et permissions prets pour API future</li>
               </ul>
+              <button className="primary-button wide" disabled={!can(role, "reset:demo")} onClick={resetDemo} type="button">
+                <Edit3 size={17} />
+                {t(locale, "resetDemo")}
+              </button>
             </article>
             <article className="panel dark-panel">
               <Activity size={24} />
-              <h3>Score opérationnel</h3>
+              <h3>Score operationnel</h3>
               <strong>98%</strong>
-              <span>Inventaire prêt pour validation métier V1</span>
+              <span>Inventaire pret pour validation metier V1</span>
             </article>
           </section>
         )}
@@ -303,6 +387,10 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
 function isView(value: string): value is View {
   return value === "dashboard" || value === "inventory" || value === "locations" || value === "settings";
+}
+
+function isRole(value: string | null): value is Role {
+  return value === "owner" || value === "admin" || value === "manager" || value === "operator";
 }
 
 function DashboardView({
@@ -323,13 +411,10 @@ function DashboardView({
   return (
     <section className="dashboard-grid">
       <div className="panel span-2">
-        <div className="panel-title">
-          <Filter size={18} />
-          <h3>{t(locale, "dashboard")}</h3>
-        </div>
+        <div className="panel-title"><Filter size={18} /><h3>{t(locale, "dashboard")}</h3></div>
         <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
           <option value="all">{t(locale, "allLocations")}</option>
-          {state.locations.map((location) => (
+          {state.locations.filter((location) => location.active).map((location) => (
             <option key={location.id} value={location.id}>{location.name}</option>
           ))}
         </select>
