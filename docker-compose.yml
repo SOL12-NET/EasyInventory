@@ -1,0 +1,43 @@
+services:
+  web:
+    build:
+      context: ./apps/web
+    env_file:
+      - ./apps/web/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: easyinventory
+      POSTGRES_USER: easyinventory
+      POSTGRES_PASSWORD: easyinventory
+    volumes:
+      - easyinventory-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easyinventory -d easyinventory"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: easyinventory
+      MINIO_ROOT_PASSWORD: easyinventory-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - easyinventory-minio:/data
+
+volumes:
+  easyinventory-postgres:
+  easyinventory-minio:
