@@ -70,6 +70,8 @@ type DashboardPointerDrag = {
   width: number;
   height: number;
   active: boolean;
+  lastMoveAt: number;
+  lastTarget?: DashboardWidgetId;
 };
 
 const storageKey = "easyinventory.saas.demo-state";
@@ -555,8 +557,17 @@ function DashboardView({
       setPointerDrag(next);
       if (!active) return;
 
-      const target = getWidgetIdFromPoint(event.clientX, event.clientY, current.id);
-      if (target && target !== current.id) {
+      const target = getStableWidgetTarget(event.clientX, event.clientY, current.id);
+      if (!target) {
+        setDragOverWidget(null);
+        return;
+      }
+
+      const now = window.performance.now();
+      if (target !== current.lastTarget && now - current.lastMoveAt > 130) {
+        const moved = { ...next, lastMoveAt: now, lastTarget: target };
+        pointerDragRef.current = moved;
+        setPointerDrag(moved);
         setDragOverWidget(target);
         moveDashboardWidget(current.id, target, { clearMove: false, skipAnimationFor: current.id });
       }
@@ -623,6 +634,25 @@ function DashboardView({
     return nextOrder;
   }
 
+  function getFloatingWidgetStyle(drag: DashboardPointerDrag | null, id: DashboardWidgetId): CSSProperties | undefined {
+    if (!drag || drag.id !== id || !drag.active) return undefined;
+    const viewportWidth = typeof window === "undefined" ? drag.width : window.innerWidth;
+    const viewportHeight = typeof window === "undefined" ? drag.height : window.innerHeight;
+    const margin = 12;
+    const maxLeft = Math.max(margin, viewportWidth - drag.width - margin);
+    const maxTop = Math.max(margin, viewportHeight - drag.height - margin);
+    const left = Math.min(Math.max(margin, drag.x - drag.offsetX), maxLeft);
+    const top = Math.min(Math.max(margin, drag.y - drag.offsetY), maxTop);
+    return {
+      height: drag.height,
+      left,
+      position: "fixed",
+      top,
+      width: drag.width,
+      zIndex: 50,
+    };
+  }
+
   function moveDashboardWidget(source: DashboardWidgetId, target: DashboardWidgetId, options: { clearMove?: boolean; skipAnimationFor?: DashboardWidgetId } = {}) {
     if (source === target) return;
     const firstRects = getWidgetRects();
@@ -669,12 +699,24 @@ function DashboardView({
     animateWidgetLayout(firstRects);
   }
 
-  function getWidgetIdFromPoint(x: number, y: number, ignoreId?: DashboardWidgetId) {
-    const element = document.elementsFromPoint(x, y)
-      .map((entry) => entry.hasAttribute("data-dashboard-widget-id") ? entry : entry.closest("[data-dashboard-widget-id]"))
-      .find((entry) => entry?.getAttribute("data-dashboard-widget-id") !== ignoreId);
-    const id = element?.getAttribute("data-dashboard-widget-id") as DashboardWidgetId | null;
-    return id && dashboardWidgetIds.includes(id) ? id : null;
+  function getStableWidgetTarget(x: number, y: number, ignoreId: DashboardWidgetId) {
+    let fallback: { id: DashboardWidgetId; distance: number } | null = null;
+    for (const id of visibleWidgets) {
+      if (id === ignoreId) continue;
+      const node = widgetRefs.current.get(id);
+      if (!node) continue;
+      const rect = node.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distance = Math.hypot(x - centerX, y - centerY);
+      if (!fallback || distance < fallback.distance) fallback = { id, distance };
+
+      const insetX = Math.min(44, rect.width * 0.18);
+      const insetY = Math.min(44, rect.height * 0.18);
+      const insideStableZone = x >= rect.left + insetX && x <= rect.right - insetX && y >= rect.top + insetY && y <= rect.bottom - insetY;
+      if (insideStableZone) return id;
+    }
+    return fallback && fallback.distance < 74 ? fallback.id : null;
   }
 
   function registerDashboardWidget(id: DashboardWidgetId, node: HTMLDivElement | null) {
@@ -696,11 +738,12 @@ function DashboardView({
       startY: event.clientY,
       x: event.clientX,
       y: event.clientY,
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
+      offsetX: rect.width / 2,
+      offsetY: rect.height / 2,
       width: rect.width,
       height: rect.height,
       active: false,
+      lastMoveAt: 0,
     };
     pointerDragRef.current = dragState;
     setPointerDrag(dragState);
@@ -860,14 +903,7 @@ function DashboardView({
           placeholderStyle={pointerDrag?.id === id && pointerDrag.active ? {
             height: pointerDrag.height,
           } : undefined}
-          dragStyle={pointerDrag?.id === id && pointerDrag.active ? {
-            height: pointerDrag.height,
-            left: pointerDrag.x - pointerDrag.offsetX,
-            position: "fixed",
-            top: pointerDrag.y - pointerDrag.offsetY,
-            width: pointerDrag.width,
-            zIndex: 50,
-          } : undefined}
+          dragStyle={getFloatingWidgetStyle(pointerDrag, id)}
           isDragging={draggedWidget === id || pointerDrag?.id === id}
           isPointerDragging={pointerDrag?.id === id && pointerDrag.active}
           isDragOver={dragOverWidget === id && draggedWidget !== id}
