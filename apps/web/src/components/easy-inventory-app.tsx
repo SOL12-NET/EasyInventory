@@ -5,11 +5,11 @@ import {
   BarChart3,
   BookOpen,
   CheckCircle2,
-  CircleAlert,
   CircleOff,
   Edit3,
   Filter,
   Gauge,
+  Image as ImageIcon,
   Layers3,
   LineChart,
   LockKeyhole,
@@ -44,6 +44,7 @@ import { statuses, type InventoryAction, type InventoryState, type Item, type It
 type View = "dashboard" | "inventory" | "logs" | "documentation" | "locations" | "settings";
 type Theme = "light" | "dark";
 type StatusChartMode = "lines" | "pie";
+type LocationChartMode = "bars" | "pie";
 type ActionRange = "24h" | "7d" | "30d";
 
 const storageKey = "easyinventory.saas.demo-state";
@@ -58,6 +59,7 @@ const statusColors: Record<ItemStatus, string> = {
   DUPLICATE: "#94a3b8",
 };
 const actionColors = ["#14b8a6", "#60a5fa", "#f59e0b", "#f43f5e", "#a78bfa", "#22c55e", "#e879f9", "#64748b"];
+const locationColors = ["#14b8a6", "#60a5fa", "#f59e0b", "#a78bfa", "#22c55e"];
 const actionRanges: Record<ActionRange, { buckets: number; stepMs: number }> = {
   "24h": { buckets: 24, stepMs: 60 * 60 * 1000 },
   "7d": { buckets: 7, stepMs: 24 * 60 * 60 * 1000 },
@@ -468,8 +470,8 @@ function DashboardView({
           <p>{summary.total} {t(locale, "scopedItems")}</p>
         </div>
       </div>
-      <InventoryInsightCard locale={locale} summary={summary} setView={setView} />
-      <PhotoCoverageCard locale={locale} summary={summary} setView={setView} />
+      <InventoryInsightCardV2 locale={locale} summary={summary} setView={setView} />
+      <PhotoCoverageCardV2 locale={locale} summary={summary} setView={setView} />
 
       <div className="panel span-2">
         <div className="panel-title split-title">
@@ -524,7 +526,7 @@ function DashboardView({
         )}
       </div>
 
-      <LocationOverviewCard locale={locale} state={state} setView={setView} />
+      <LocationOverviewCardV2 locale={locale} state={state} setView={setView} />
 
       <div className="panel recent-actions-panel span-2">
         <button className="panel-title action-title" onClick={() => setView("logs")} type="button">
@@ -592,7 +594,7 @@ function PhotoCoverageCard({
 
   return (
     <button className={`insight-card ${summary.missingFront > 0 ? "attention" : ""}`} onClick={() => setView("inventory")} type="button">
-      <div className="insight-icon"><CircleAlert size={22} /></div>
+      <div className="insight-icon"><ImageIcon size={22} /></div>
       <span>{t(locale, "frontPhotoCoverage")}</span>
       <strong>{coverage}%</strong>
       <p>{complete}/{summary.total} {t(locale, "completeItems")} · {summary.missingFront} {t(locale, "missingPhotos")}</p>
@@ -647,13 +649,160 @@ function LocationOverviewCard({
   );
 }
 
+function InventoryInsightCardV2({
+  locale,
+  summary,
+  setView,
+}: {
+  locale: Locale;
+  summary: ReturnType<typeof summarizeInventory>;
+  setView: (view: View) => void;
+}) {
+  const available = summary.byStatus.AVAILABLE;
+  const toReview = summary.missingFront + summary.byStatus.REPAIR + summary.byStatus.LOST;
+  const visibleStatuses = statuses.filter((status) => summary.byStatus[status] > 0);
+
+  return (
+    <button className="insight-card" onClick={() => setView("inventory")} type="button">
+      <div className="insight-icon"><Warehouse size={22} /></div>
+      <span>{t(locale, "trackedItems")}</span>
+      <strong>{summary.total}</strong>
+      <p>{available} {t(locale, "availableItems")} - {toReview} {t(locale, "itemsToReview")}</p>
+      <div className="insight-chip-list" aria-label={t(locale, "status")}>
+        {visibleStatuses.map((status) => (
+          <span key={status}>
+            <i style={{ background: statusColors[status] }} />
+            {statusLabels[locale][status]} {summary.byStatus[status]}
+          </span>
+        ))}
+      </div>
+    </button>
+  );
+}
+
+function PhotoCoverageCardV2({
+  locale,
+  summary,
+  setView,
+}: {
+  locale: Locale;
+  summary: ReturnType<typeof summarizeInventory>;
+  setView: (view: View) => void;
+}) {
+  const complete = Math.max(0, summary.total - summary.missingFront);
+  const coverage = summary.total === 0 ? 0 : Math.round((complete / summary.total) * 100);
+
+  return (
+    <button className={`insight-card ${summary.missingFront > 0 ? "attention" : ""}`} onClick={() => setView("inventory")} type="button">
+      <div className="insight-icon"><ImageIcon size={22} /></div>
+      <span>{t(locale, "frontPhotoCoverage")}</span>
+      <strong>{coverage}%</strong>
+      <p>{complete}/{summary.total} {t(locale, "completeItems")} - {summary.missingFront} {t(locale, "missingPhotos")}</p>
+      <div className="photo-split-track" aria-hidden="true">
+        <i className="complete" style={{ width: `${coverage}%` }} />
+        <i className="missing" style={{ width: `${100 - coverage}%` }} />
+      </div>
+      <div className="insight-chip-list">
+        <span><i className="complete" />{t(locale, "withPhoto")} {complete}</span>
+        <span><i className="missing" />{t(locale, "withoutPhoto")} {summary.missingFront}</span>
+      </div>
+    </button>
+  );
+}
+
+function LocationOverviewCardV2({
+  locale,
+  state,
+  setView,
+}: {
+  locale: Locale;
+  state: InventoryState;
+  setView: (view: View) => void;
+}) {
+  const [locationMode, setLocationMode] = useState<LocationChartMode>("bars");
+  const usage = state.locations
+    .map((location) => ({
+      ...location,
+      count: state.items.filter((item) => item.locationId === location.id).length,
+    }))
+    .sort((a, b) => b.count - a.count || Number(b.active) - Number(a.active) || a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+  const visible = usage.slice(0, 5);
+  const hiddenCount = Math.max(0, usage.length - visible.length);
+  const max = Math.max(1, ...visible.map((location) => location.count));
+  const totalVisible = visible.reduce((acc, location) => acc + location.count, 0);
+  const pieSegments = buildGenericPieSegments(visible.map((location, index) => ({
+    value: location.count,
+    color: locationColors[index % locationColors.length],
+  })));
+
+  return (
+    <article className="panel location-overview-panel span-2">
+      <div className="panel-title split-title">
+        <div><MapPin size={18} /><h3>{t(locale, "locations")}</h3></div>
+        <div className="segmented-control compact" aria-label={t(locale, "locationDisplay")}>
+          <button className={locationMode === "bars" ? "active" : ""} onClick={() => setLocationMode("bars")} type="button">
+            <LineChart size={14} />
+            {t(locale, "chartLines")}
+          </button>
+          <button className={locationMode === "pie" ? "active" : ""} onClick={() => setLocationMode("pie")} type="button">
+            <PieChart size={14} />
+            {t(locale, "chartPie")}
+          </button>
+        </div>
+      </div>
+      {locationMode === "bars" ? (
+        <div className="location-usage-list">
+          {visible.map((location, index) => (
+            <div key={location.id} className="location-usage-row">
+              <span className={`location-state ${location.active ? "active" : ""}`}>{location.active ? t(locale, "active") : t(locale, "inactive")}</span>
+              <div>
+                <strong>{location.name}</strong>
+                <span>{location.count} {t(locale, "itemCount")}</span>
+              </div>
+              <i><b style={{ width: `${(location.count / max) * 100}%`, background: locationColors[index % locationColors.length] }} /></i>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="location-pie-layout">
+          <div
+            className="location-pie"
+            style={{ background: pieSegments.length ? `conic-gradient(${pieSegments.join(", ")})` : "var(--media-bg)" }}
+            aria-hidden="true"
+          >
+            <span>{totalVisible}</span>
+            <small>{t(locale, "itemCount")}</small>
+          </div>
+          <div className="location-pie-legend">
+            {visible.map((location, index) => (
+              <div key={location.id}>
+                <i style={{ background: locationColors[index % locationColors.length] }} />
+                <span>{location.name}</span>
+                <strong>{location.count}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {hiddenCount > 0 && <p>{hiddenCount} {t(locale, "otherLocations")}</p>}
+      <button className="open-locations-link" onClick={() => setView("locations")} type="button">{t(locale, "openLocations")}</button>
+    </article>
+  );
+}
+
 function ActionActivityChart({ actions, locale, advanced = false }: { actions: InventoryAction[]; locale: Locale; advanced?: boolean }) {
   const [range, setRange] = useState<ActionRange>("7d");
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const actionTypes = useMemo(() => getActionTypes(actions), [actions]);
   const [selectedTypes, setSelectedTypes] = useState<string[] | null>(null);
   const enabledTypes = selectedTypes ?? actionTypes;
-  const chart = buildActionChartData(actions, range, enabledTypes);
-  const periodCounts = getPeriodActionCounts(actions, range);
+  const chart = buildActionChartData(actions, range, enabledTypes, nowTick);
+  const periodCounts = getPeriodActionCounts(actions, range, nowTick);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(Date.now()), 3000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   function toggleType(type: string) {
     const current = selectedTypes ?? actionTypes;
@@ -679,7 +828,7 @@ function ActionActivityChart({ actions, locale, advanced = false }: { actions: I
       ) : (
         <>
           <div className="action-chart-canvas">
-            <svg viewBox="0 0 100 64" role="img" aria-label={t(locale, "actionActivity")}>
+            <svg viewBox="0 0 100 64" preserveAspectRatio="none" role="img" aria-label={t(locale, "actionActivity")}>
               <g className="chart-grid">
                 <line x1="0" x2="100" y1="10" y2="10" />
                 <line x1="0" x2="100" y1="32" y2="32" />
@@ -689,7 +838,8 @@ function ActionActivityChart({ actions, locale, advanced = false }: { actions: I
                 <path
                   d={series.path}
                   fill="none"
-                  key={series.type}
+                  key={`${series.type}-${range}-${nowTick}`}
+                  pathLength={1}
                   stroke={getActionColor(series.type, actionTypes)}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -732,9 +882,9 @@ function getActionColor(type: string, allTypes: string[]) {
   return actionColors[index % actionColors.length];
 }
 
-function getPeriodActionCounts(actions: InventoryAction[], range: ActionRange) {
+function getPeriodActionCounts(actions: InventoryAction[], range: ActionRange, now = Date.now()) {
   const { buckets, stepMs } = actionRanges[range];
-  const start = Date.now() - stepMs * (buckets - 1);
+  const start = now - stepMs * (buckets - 1);
   return actions.reduce((acc, action) => {
     const time = new Date(action.at).getTime();
     if (time < start) return acc;
@@ -742,9 +892,8 @@ function getPeriodActionCounts(actions: InventoryAction[], range: ActionRange) {
   }, {} as Record<string, number>);
 }
 
-function buildActionChartData(actions: InventoryAction[], range: ActionRange, types: string[]) {
+function buildActionChartData(actions: InventoryAction[], range: ActionRange, types: string[], now = Date.now()) {
   const { buckets, stepMs } = actionRanges[range];
-  const now = Date.now();
   const start = now - stepMs * (buckets - 1);
   const labels = Array.from({ length: buckets }, (_, index) => formatBucketLabel(new Date(start + index * stepMs), range));
   const valuesByType = Object.fromEntries(types.map((type) => [type, Array.from({ length: buckets }, () => 0)])) as Record<string, number[]>;
@@ -800,6 +949,19 @@ function buildStatusPieSegments(byStatus: Record<ItemStatus, number>, total: num
     const end = cursor + (count / total) * 360;
     cursor = end;
     return `${statusColors[status]} ${start}deg ${end}deg`;
+  });
+}
+
+function buildGenericPieSegments(entries: Array<{ value: number; color: string }>) {
+  const total = entries.reduce((acc, entry) => acc + entry.value, 0);
+  if (total <= 0) return [];
+  let cursor = 0;
+  return entries.flatMap((entry) => {
+    if (entry.value <= 0) return [];
+    const start = cursor;
+    const end = cursor + (entry.value / total) * 360;
+    cursor = end;
+    return `${entry.color} ${start}deg ${end}deg`;
   });
 }
 
