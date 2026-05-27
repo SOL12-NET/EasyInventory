@@ -1561,7 +1561,8 @@ textarea:disabled,
 
 .action-chart-canvas {
   position: relative;
-  min-height: 172px;
+  min-height: 92px;
+  max-height: 108px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
@@ -1572,6 +1573,7 @@ textarea:disabled,
 
 .action-chart.advanced .action-chart-canvas {
   min-height: 230px;
+  max-height: none;
 }
 
 .action-chart-canvas svg {
@@ -1589,7 +1591,7 @@ textarea:disabled,
   opacity: 0.8;
 }
 
-.action-chart-canvas polyline {
+.action-chart-canvas path {
   filter: drop-shadow(0 6px 10px rgba(15, 23, 42, 0.18));
 }
 
@@ -1627,6 +1629,16 @@ textarea:disabled,
   gap: 7px;
   font-size: 0.78rem;
   font-weight: 850;
+}
+
+.recent-actions-panel .action-type-toggles {
+  max-height: 72px;
+  overflow: hidden;
+}
+
+.recent-actions-panel .compact-list {
+  max-height: 158px;
+  overflow: hidden;
 }
 
 .action-type-toggles button.active {

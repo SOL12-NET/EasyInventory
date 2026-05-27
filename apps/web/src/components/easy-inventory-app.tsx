@@ -526,7 +526,7 @@ function DashboardView({
 
       <LocationOverviewCard locale={locale} state={state} setView={setView} />
 
-      <div className="panel recent-actions-panel span-4">
+      <div className="panel recent-actions-panel span-2">
         <button className="panel-title action-title" onClick={() => setView("logs")} type="button">
           <span><Activity size={18} /><h3>{t(locale, "recentActions")}</h3></span>
           <strong>{t(locale, "viewAll")}</strong>
@@ -686,10 +686,10 @@ function ActionActivityChart({ actions, locale, advanced = false }: { actions: I
                 <line x1="0" x2="100" y1="54" y2="54" />
               </g>
               {chart.series.map((series) => (
-                <polyline
+                <path
+                  d={series.path}
                   fill="none"
                   key={series.type}
-                  points={series.points}
                   stroke={getActionColor(series.type, actionTypes)}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -760,16 +760,27 @@ function buildActionChartData(actions: InventoryAction[], range: ActionRange, ty
   const max = Math.max(0, ...Object.values(valuesByType).flat());
   const series = types.map((type) => ({
     type,
-    points: valuesByType[type]
+    path: buildSmoothPath(valuesByType[type]
       .map((value, index) => {
         const x = buckets === 1 ? 50 : (index / (buckets - 1)) * 100;
         const y = max === 0 ? 54 : 54 - (value / max) * 44;
-        return `${x.toFixed(2)},${y.toFixed(2)}`;
-      })
-      .join(" "),
+        return { x, y };
+      })),
   }));
 
   return { labels, max, series };
+}
+
+function buildSmoothPath(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+    const previous = points[index - 1];
+    const controlX = previous.x + (point.x - previous.x) / 2;
+    return `${path} C ${controlX.toFixed(2)} ${previous.y.toFixed(2)}, ${controlX.toFixed(2)} ${point.y.toFixed(2)}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+  }, "");
 }
 
 function formatBucketLabel(date: Date, range: ActionRange) {
