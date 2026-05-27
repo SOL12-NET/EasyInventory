@@ -44,6 +44,7 @@ import { statuses, type InventoryAction, type InventoryState, type Item, type It
 type View = "dashboard" | "inventory" | "logs" | "documentation" | "locations" | "settings";
 type Theme = "light" | "dark";
 type StatusChartMode = "lines" | "pie";
+type ActionRange = "24h" | "7d" | "30d";
 
 const storageKey = "easyinventory.saas.demo-state";
 const themeStorageKey = "easyinventory.saas.theme";
@@ -55,6 +56,12 @@ const statusColors: Record<ItemStatus, string> = {
   SOLD: "#475569",
   LOST: "#dc2626",
   DUPLICATE: "#94a3b8",
+};
+const actionColors = ["#14b8a6", "#60a5fa", "#f59e0b", "#f43f5e", "#a78bfa", "#22c55e", "#e879f9", "#64748b"];
+const actionRanges: Record<ActionRange, { buckets: number; stepMs: number }> = {
+  "24h": { buckets: 24, stepMs: 60 * 60 * 1000 },
+  "7d": { buckets: 7, stepMs: 24 * 60 * 60 * 1000 },
+  "30d": { buckets: 30, stepMs: 24 * 60 * 60 * 1000 },
 };
 
 function loadState() {
@@ -224,7 +231,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             {navOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <div>
-            <p className="eyebrow"><Sparkles size={14} /> SaaS V1</p>
             <h1>{viewTitle(locale, view)}</h1>
           </div>
           <div className="topbar-actions">
@@ -444,10 +450,11 @@ function DashboardView({
   setChartMode: (value: StatusChartMode) => void;
 }) {
   const pieSegments = buildStatusPieSegments(summary.byStatus, summary.total);
+  const selectedLocation = state.locations.find((location) => location.id === locationFilter);
 
   return (
     <section className="dashboard-grid">
-      <div className="panel span-2">
+      <div className="panel span-2 dashboard-filter-panel">
         <div className="panel-title"><Filter size={18} /><h3>{t(locale, "dashboard")}</h3></div>
         <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
           <option value="all">{t(locale, "allLocations")}</option>
@@ -455,10 +462,14 @@ function DashboardView({
             <option key={location.id} value={location.id}>{location.name}</option>
           ))}
         </select>
+        <div className="dashboard-scope">
+          <span>{t(locale, "dashboardScope")}</span>
+          <strong>{selectedLocation?.name ?? t(locale, "allLocations")}</strong>
+          <p>{summary.total} {t(locale, "scopedItems")}</p>
+        </div>
       </div>
-      <MetricCard label={t(locale, "totalItems")} value={summary.total} icon={<Warehouse size={22} />} />
-      <MetricCard label={t(locale, "missingFront")} value={summary.missingFront} icon={<CircleAlert size={22} />} danger={summary.missingFront > 0} />
-      <MetricCard label={t(locale, "activeLocations")} value={state.locations.filter((location) => location.active).length} icon={<MapPin size={22} />} />
+      <InventoryInsightCard locale={locale} summary={summary} setView={setView} />
+      <PhotoCoverageCard locale={locale} summary={summary} setView={setView} />
 
       <div className="panel span-2">
         <div className="panel-title split-title">
@@ -513,23 +524,14 @@ function DashboardView({
         )}
       </div>
 
-      <div className="panel">
-        <div className="panel-title"><MapPin size={18} /><h3>{t(locale, "locations")}</h3></div>
-        <div className="compact-list">
-          {summary.byLocation.map((location) => (
-            <div key={location.locationId}>
-              <span>{location.name}</span>
-              <strong>{location.count}</strong>
-            </div>
-          ))}
-        </div>
-      </div>
+      <LocationOverviewCard locale={locale} state={state} setView={setView} />
 
-      <div className="panel recent-actions-panel">
+      <div className="panel recent-actions-panel span-4">
         <button className="panel-title action-title" onClick={() => setView("logs")} type="button">
           <span><Activity size={18} /><h3>{t(locale, "recentActions")}</h3></span>
           <strong>{t(locale, "viewAll")}</strong>
         </button>
+        <ActionActivityChart actions={state.actions} locale={locale} />
         <div className="compact-list">
           {state.actions.slice(0, 5).map((action) => (
             <div key={action.id}>
@@ -541,6 +543,240 @@ function DashboardView({
       </div>
     </section>
   );
+}
+
+function InventoryInsightCard({
+  locale,
+  summary,
+  setView,
+}: {
+  locale: Locale;
+  summary: ReturnType<typeof summarizeInventory>;
+  setView: (view: View) => void;
+}) {
+  const available = summary.byStatus.AVAILABLE;
+  const toReview = summary.missingFront + summary.byStatus.REPAIR + summary.byStatus.LOST;
+
+  return (
+    <button className="insight-card" onClick={() => setView("inventory")} type="button">
+      <div className="insight-icon"><Warehouse size={22} /></div>
+      <span>{t(locale, "trackedItems")}</span>
+      <strong>{summary.total}</strong>
+      <p>{available} {t(locale, "availableItems")} · {toReview} {t(locale, "itemsToReview")}</p>
+      <div className="mini-status-strip" aria-hidden="true">
+        {statuses.map((status) => (
+          <i
+            key={status}
+            style={{
+              background: statusColors[status],
+              flexGrow: Math.max(0.2, summary.byStatus[status]),
+            }}
+          />
+        ))}
+      </div>
+    </button>
+  );
+}
+
+function PhotoCoverageCard({
+  locale,
+  summary,
+  setView,
+}: {
+  locale: Locale;
+  summary: ReturnType<typeof summarizeInventory>;
+  setView: (view: View) => void;
+}) {
+  const complete = Math.max(0, summary.total - summary.missingFront);
+  const coverage = summary.total === 0 ? 0 : Math.round((complete / summary.total) * 100);
+
+  return (
+    <button className={`insight-card ${summary.missingFront > 0 ? "attention" : ""}`} onClick={() => setView("inventory")} type="button">
+      <div className="insight-icon"><CircleAlert size={22} /></div>
+      <span>{t(locale, "frontPhotoCoverage")}</span>
+      <strong>{coverage}%</strong>
+      <p>{complete}/{summary.total} {t(locale, "completeItems")} · {summary.missingFront} {t(locale, "missingPhotos")}</p>
+      <div className="coverage-track" aria-hidden="true">
+        <i style={{ width: `${coverage}%` }} />
+      </div>
+    </button>
+  );
+}
+
+function LocationOverviewCard({
+  locale,
+  state,
+  setView,
+}: {
+  locale: Locale;
+  state: InventoryState;
+  setView: (view: View) => void;
+}) {
+  const usage = state.locations
+    .map((location) => ({
+      ...location,
+      count: state.items.filter((item) => item.locationId === location.id).length,
+    }))
+    .sort((a, b) => b.count - a.count || Number(b.active) - Number(a.active) || a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+  const visible = usage.slice(0, 5);
+  const hiddenCount = Math.max(0, usage.length - visible.length);
+  const max = Math.max(1, ...visible.map((location) => location.count));
+
+  return (
+    <button className="panel location-overview-panel span-2" onClick={() => setView("locations")} type="button">
+      <div className="panel-title split-title">
+        <div><MapPin size={18} /><h3>{t(locale, "locations")}</h3></div>
+        <strong>{t(locale, "openLocations")}</strong>
+      </div>
+      <div className="location-usage-list">
+        {visible.map((location) => (
+          <div key={location.id} className="location-usage-row">
+            <span className={`location-active-dot ${location.active ? "active" : ""}`}>
+              {location.active ? <CheckCircle2 size={14} /> : <CircleOff size={14} />}
+            </span>
+            <div>
+              <strong>{location.name}</strong>
+              <span>{location.count} {t(locale, "itemCount")}</span>
+            </div>
+            <i><b style={{ width: `${(location.count / max) * 100}%` }} /></i>
+          </div>
+        ))}
+      </div>
+      {hiddenCount > 0 && <p>{hiddenCount} {t(locale, "otherLocations")}</p>}
+    </button>
+  );
+}
+
+function ActionActivityChart({ actions, locale, advanced = false }: { actions: InventoryAction[]; locale: Locale; advanced?: boolean }) {
+  const [range, setRange] = useState<ActionRange>("7d");
+  const actionTypes = useMemo(() => getActionTypes(actions), [actions]);
+  const [selectedTypes, setSelectedTypes] = useState<string[] | null>(null);
+  const enabledTypes = selectedTypes ?? actionTypes;
+  const chart = buildActionChartData(actions, range, enabledTypes);
+  const periodCounts = getPeriodActionCounts(actions, range);
+
+  function toggleType(type: string) {
+    const current = selectedTypes ?? actionTypes;
+    const next = current.includes(type) ? current.filter((entry) => entry !== type) : [...current, type];
+    setSelectedTypes(next);
+  }
+
+  return (
+    <div className={`action-chart ${advanced ? "advanced" : ""}`}>
+      <div className="action-chart-toolbar">
+        <div className="segmented-control compact" aria-label={t(locale, "actionRange")}>
+          {(["24h", "7d", "30d"] as ActionRange[]).map((entry) => (
+            <button className={range === entry ? "active" : ""} key={entry} onClick={() => setRange(entry)} type="button">
+              {t(locale, entry === "24h" ? "range24h" : entry === "7d" ? "range7d" : "range30d")}
+            </button>
+          ))}
+        </div>
+        {advanced && <strong>{actions.length} {t(locale, "recentActions").toLowerCase()}</strong>}
+      </div>
+
+      {actionTypes.length === 0 ? (
+        <div className="empty-state small">{t(locale, "noHistory")}</div>
+      ) : (
+        <>
+          <div className="action-chart-canvas">
+            <svg viewBox="0 0 100 64" role="img" aria-label={t(locale, "actionActivity")}>
+              <g className="chart-grid">
+                <line x1="0" x2="100" y1="10" y2="10" />
+                <line x1="0" x2="100" y1="32" y2="32" />
+                <line x1="0" x2="100" y1="54" y2="54" />
+              </g>
+              {chart.series.map((series) => (
+                <polyline
+                  fill="none"
+                  key={series.type}
+                  points={series.points}
+                  stroke={getActionColor(series.type, actionTypes)}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={advanced ? 2.5 : 2}
+                />
+              ))}
+            </svg>
+            {chart.max === 0 && <span>{t(locale, "noActionInRange")}</span>}
+          </div>
+          <div className="action-chart-labels" aria-hidden="true">
+            <span>{chart.labels[0]}</span>
+            <span>{chart.labels[Math.floor(chart.labels.length / 2)]}</span>
+            <span>{chart.labels[chart.labels.length - 1]}</span>
+          </div>
+          <div className="action-type-toggles">
+            {actionTypes.map((type) => {
+              const active = enabledTypes.includes(type);
+              return (
+                <button className={active ? "active" : ""} key={type} onClick={() => toggleType(type)} type="button">
+                  <i style={{ background: getActionColor(type, actionTypes) }} />
+                  <span>{actionLabel(locale, type)}</span>
+                  {advanced && <strong>{periodCounts[type] ?? 0}</strong>}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function getActionTypes(actions: InventoryAction[]) {
+  const counts = actions.reduce((acc, action) => ({ ...acc, [action.type]: (acc[action.type] ?? 0) + 1 }), {} as Record<string, number>);
+  return Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+}
+
+function getActionColor(type: string, allTypes: string[]) {
+  const index = Math.max(0, allTypes.indexOf(type));
+  return actionColors[index % actionColors.length];
+}
+
+function getPeriodActionCounts(actions: InventoryAction[], range: ActionRange) {
+  const { buckets, stepMs } = actionRanges[range];
+  const start = Date.now() - stepMs * (buckets - 1);
+  return actions.reduce((acc, action) => {
+    const time = new Date(action.at).getTime();
+    if (time < start) return acc;
+    return { ...acc, [action.type]: (acc[action.type] ?? 0) + 1 };
+  }, {} as Record<string, number>);
+}
+
+function buildActionChartData(actions: InventoryAction[], range: ActionRange, types: string[]) {
+  const { buckets, stepMs } = actionRanges[range];
+  const now = Date.now();
+  const start = now - stepMs * (buckets - 1);
+  const labels = Array.from({ length: buckets }, (_, index) => formatBucketLabel(new Date(start + index * stepMs), range));
+  const valuesByType = Object.fromEntries(types.map((type) => [type, Array.from({ length: buckets }, () => 0)])) as Record<string, number[]>;
+
+  actions.forEach((action) => {
+    if (!types.includes(action.type)) return;
+    const time = new Date(action.at).getTime();
+    if (time < start || time > now) return;
+    const index = Math.min(buckets - 1, Math.max(0, Math.floor((time - start) / stepMs)));
+    valuesByType[action.type][index] += 1;
+  });
+
+  const max = Math.max(0, ...Object.values(valuesByType).flat());
+  const series = types.map((type) => ({
+    type,
+    points: valuesByType[type]
+      .map((value, index) => {
+        const x = buckets === 1 ? 50 : (index / (buckets - 1)) * 100;
+        const y = max === 0 ? 54 : 54 - (value / max) * 44;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(" "),
+  }));
+
+  return { labels, max, series };
+}
+
+function formatBucketLabel(date: Date, range: ActionRange) {
+  if (range === "24h") {
+    return date.toLocaleTimeString([], { hour: "2-digit" });
+  }
+  return date.toLocaleDateString([], { day: "2-digit", month: "2-digit" });
 }
 
 function buildStatusPieSegments(byStatus: Record<ItemStatus, number>, total: number) {
@@ -584,6 +820,11 @@ function LogsView({
           <p>{t(locale, "logsIntro")}</p>
         </div>
         <strong>{actions.length}</strong>
+      </div>
+
+      <div className="panel">
+        <div className="panel-title"><LineChart size={18} /><h3>{t(locale, "actionActivity")}</h3></div>
+        <ActionActivityChart actions={actions} locale={locale} advanced />
       </div>
 
       <div className="panel logs-list">
@@ -729,15 +970,5 @@ function DocumentationView() {
         </div>
       </div>
     </section>
-  );
-}
-
-function MetricCard({ label, value, icon, danger = false }: { label: string; value: number; icon: React.ReactNode; danger?: boolean }) {
-  return (
-    <article className={`metric-card ${danger ? "danger" : ""}`}>
-      <div>{icon}</div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
   );
 }

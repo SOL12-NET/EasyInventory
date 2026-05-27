@@ -311,11 +311,44 @@ html[data-theme="dark"] .moon-icon {
 }
 
 .panel,
-.metric-card {
+.metric-card,
+.insight-card {
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   box-shadow: var(--shadow);
+}
+
+.dashboard-filter-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.dashboard-filter-panel .panel-title {
+  margin-bottom: 0;
+}
+
+.dashboard-scope {
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.dashboard-scope span,
+.dashboard-scope p {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.dashboard-scope strong {
+  font-size: 1.25rem;
+}
+
+.dashboard-scope p {
+  margin: 0;
 }
 
 .panel {
@@ -385,6 +418,10 @@ html[data-theme="dark"] .moon-icon {
   grid-column: span 2;
 }
 
+.span-4 {
+  grid-column: 1 / -1;
+}
+
 .metric-card {
   min-height: 132px;
   padding: 18px;
@@ -392,6 +429,84 @@ html[data-theme="dark"] .moon-icon {
   grid-template-rows: auto auto 1fr;
   align-content: start;
   gap: 10px;
+}
+
+.insight-card {
+  min-height: 156px;
+  padding: 18px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  color: var(--ink);
+  text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.insight-card:hover,
+.insight-card:focus-visible,
+.location-overview-panel:hover,
+.location-overview-panel:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(15, 118, 110, 0.7);
+  box-shadow: 0 22px 48px rgba(15, 118, 110, 0.15);
+  outline: none;
+}
+
+.insight-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #ccfbf1;
+  color: var(--primary-dark);
+}
+
+.insight-card.attention .insight-icon {
+  background: #fee2e2;
+  color: var(--danger);
+}
+
+.insight-card span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.insight-card strong {
+  font-size: 2.45rem;
+  line-height: 1;
+}
+
+.insight-card p {
+  margin: 0;
+  color: var(--meta);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.mini-status-strip,
+.coverage-track {
+  height: 9px;
+  border-radius: 999px;
+  background: var(--media-bg);
+  overflow: hidden;
+}
+
+.mini-status-strip {
+  display: flex;
+  gap: 2px;
+}
+
+.mini-status-strip i,
+.coverage-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.coverage-track i {
+  background: linear-gradient(90deg, var(--primary), #22c55e);
 }
 
 .metric-card div {
@@ -533,6 +648,86 @@ html[data-theme="dark"] .moon-icon {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.location-overview-panel {
+  width: 100%;
+  color: var(--ink);
+  display: grid;
+  gap: 10px;
+  text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.location-overview-panel .panel-title {
+  margin-bottom: 2px;
+}
+
+.location-overview-panel .panel-title > strong {
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: var(--search-count-bg);
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+}
+
+.location-overview-panel > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.location-usage-list {
+  display: grid;
+  gap: 9px;
+}
+
+.location-usage-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 0.9fr) minmax(96px, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+}
+
+.location-active-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.location-active-dot.active {
+  background: #dcfce7;
+  color: var(--ok);
+}
+
+.location-usage-row strong,
+.location-usage-row span {
+  display: block;
+}
+
+.location-usage-row span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.location-usage-row > i {
+  height: 9px;
+  border-radius: 999px;
+  background: var(--media-bg);
+  overflow: hidden;
+}
+
+.location-usage-row > i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), #60a5fa);
 }
 
 .compact-list,
@@ -766,14 +961,14 @@ html[data-theme="dark"] .inventory-card-media::after {
 
 .inventory-card-placeholder {
   height: 100%;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 8px;
-  color: var(--placeholder);
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.16), rgba(37, 99, 235, 0.12)),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.35) 0 10px, transparent 10px 20px);
+  background: var(--media-bg);
+}
+
+.inventory-card-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .inventory-card-tag,
@@ -982,11 +1177,32 @@ html[data-theme="dark"] .photo-hero::after {
 
 .photo-empty {
   height: 280px;
+  position: relative;
   display: grid;
   place-items: center;
   align-content: center;
   gap: 8px;
   color: var(--muted);
+  overflow: hidden;
+}
+
+.photo-empty img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-empty span {
+  position: relative;
+  z-index: 2;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(17, 24, 39, 0.72);
+  color: white;
+  font-weight: 850;
+  backdrop-filter: blur(10px);
 }
 
 .upload-button {
@@ -1301,6 +1517,7 @@ textarea:disabled,
 .recent-actions-panel {
   display: grid;
   align-content: start;
+  gap: 12px;
 }
 
 .action-title {
@@ -1319,6 +1536,113 @@ textarea:disabled,
   background: var(--search-count-bg);
   color: var(--primary-dark);
   font-size: 0.78rem;
+}
+
+.action-chart {
+  display: grid;
+  gap: 10px;
+}
+
+.action-chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.segmented-control.compact button {
+  padding: 6px 9px;
+}
+
+.action-chart-toolbar > strong {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.action-chart-canvas {
+  position: relative;
+  min-height: 172px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(20, 184, 166, 0.06), transparent),
+    var(--surface);
+  overflow: hidden;
+}
+
+.action-chart.advanced .action-chart-canvas {
+  min-height: 230px;
+}
+
+.action-chart-canvas svg {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  display: block;
+  overflow: visible;
+  padding: 10px;
+}
+
+.chart-grid line {
+  stroke: var(--line);
+  stroke-width: 0.5;
+  opacity: 0.8;
+}
+
+.action-chart-canvas polyline {
+  filter: drop-shadow(0 6px 10px rgba(15, 23, 42, 0.18));
+}
+
+.action-chart-canvas > span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.action-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.action-type-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-type-toggles button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--muted);
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.action-type-toggles button.active {
+  border-color: rgba(15, 118, 110, 0.58);
+  color: var(--ink);
+  background: var(--search-count-bg);
+}
+
+.action-type-toggles i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.action-type-toggles strong {
+  color: var(--primary-dark);
 }
 
 .logs-page,
@@ -1602,6 +1926,7 @@ textarea:disabled,
   }
 
   .span-2,
+  .span-4,
   .wide-field {
     grid-column: span 1;
   }
@@ -1663,6 +1988,20 @@ textarea:disabled,
   .segmented-control button {
     flex: 1;
     justify-content: center;
+  }
+
+  .action-chart-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .location-usage-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .location-usage-row > i {
+    grid-column: 2;
+    width: 100%;
   }
 
   .item-row {

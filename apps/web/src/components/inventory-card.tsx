@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Clock3, MapPin, Package, Tag } from "lucide-react";
+import { Clock3, MapPin, Package, Tag } from "lucide-react";
 import { getFrontPhoto, getLastAction } from "@/lib/inventory";
 import { actionLabel, statusLabels, t } from "@/lib/i18n";
 import type { InventoryState, Item, ItemStatus, Locale } from "@/lib/types";
@@ -44,8 +44,8 @@ export function InventoryCard({
           <img src={photo.url} alt={photo.originalName} />
         ) : (
           <div className="inventory-card-placeholder">
-            <Camera size={34} />
-            <span>Photo</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/inventory-placeholder.png" alt="" />
           </div>
         )}
         <span className="inventory-card-tag"><Tag size={14} /> #{item.tag}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Check, History, ImagePlus, ShieldAlert, Star, Trash2, X } from "lucide-react";
+import { Check, History, ImagePlus, ShieldAlert, Star, Trash2, X } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { categories, getItemActions, getItemPhotos } from "@/lib/inventory";
 import { actionLabel, statusLabels, t } from "@/lib/i18n";
@@ -59,7 +59,11 @@ export function InventoryDetailPanel({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={selectedPhoto.url} alt={selectedPhoto.originalName} />
             ) : (
-              <div className="photo-empty"><Camera size={42} /><span>{t(locale, "missingFront")}</span></div>
+              <div className="photo-empty">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/inventory-placeholder.png" alt="" />
+                <span>{t(locale, "missingFront")}</span>
+              </div>
             )}
             <label className={`upload-button ${!canAddPhotos ? "disabled" : ""}`}>
               <ImagePlus size={18} />
