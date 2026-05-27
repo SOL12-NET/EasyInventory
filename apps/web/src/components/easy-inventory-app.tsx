@@ -2,12 +2,17 @@
 
 import {
   Activity,
+  ArrowLeft,
+  ArrowRight,
   BarChart3,
   BookOpen,
   CheckCircle2,
   CircleOff,
   Edit3,
+  Eye,
+  EyeOff,
   Filter,
+  GripVertical,
   Image as ImageIcon,
   Layers3,
   LineChart,
@@ -17,13 +22,15 @@ import {
   Moon,
   PackagePlus,
   PieChart,
+  RotateCcw,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Sun,
   Warehouse,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type DragEvent, type PointerEvent, type ReactNode } from "react";
 import { InventoryCardsView } from "@/components/inventory-cards-view";
 import {
   addLocation,
@@ -45,10 +52,35 @@ type Theme = "light" | "dark";
 type StatusChartMode = "lines" | "pie";
 type LocationChartMode = "bars" | "pie";
 type ActionRange = "24h" | "7d" | "30d";
+type TranslationKey = Parameters<typeof t>[1];
+type DashboardWidgetId = "scope" | "inventory" | "photos" | "status" | "locations" | "actions";
+type DashboardLayoutState = {
+  order: DashboardWidgetId[];
+  hidden: DashboardWidgetId[];
+};
 
 const storageKey = "easyinventory.saas.demo-state";
 const themeStorageKey = "easyinventory.saas.theme";
 const roleStorageKey = "easyinventory.saas.demo-role";
+const dashboardLayoutStorageKey = "easyinventory.saas.dashboard-layout";
+const dashboardWidgetIds: DashboardWidgetId[] = ["scope", "inventory", "photos", "status", "locations", "actions"];
+const defaultDashboardLayout: DashboardLayoutState = { order: dashboardWidgetIds, hidden: [] };
+const dashboardWidgetSpans: Record<DashboardWidgetId, 1 | 2> = {
+  scope: 2,
+  inventory: 1,
+  photos: 1,
+  status: 2,
+  locations: 2,
+  actions: 2,
+};
+const dashboardWidgetLabels: Record<DashboardWidgetId, TranslationKey> = {
+  scope: "dashboardScopeWidget",
+  inventory: "trackedItems",
+  photos: "frontPhotoCoverage",
+  status: "status",
+  locations: "locations",
+  actions: "recentActions",
+};
 const statusColors: Record<ItemStatus, string> = {
   AVAILABLE: "#14b8a6",
   RENTED: "#60a5fa",
@@ -72,6 +104,26 @@ function loadState() {
     return saved ? (JSON.parse(saved) as InventoryState) : cloneDemoState();
   } catch {
     return cloneDemoState();
+  }
+}
+
+function normalizeDashboardLayout(layout?: Partial<DashboardLayoutState>): DashboardLayoutState {
+  const incomingOrder = Array.isArray(layout?.order) ? layout.order : [];
+  const order = [
+    ...incomingOrder.filter((id, index): id is DashboardWidgetId => dashboardWidgetIds.includes(id as DashboardWidgetId) && incomingOrder.indexOf(id) === index),
+    ...dashboardWidgetIds.filter((id) => !incomingOrder.includes(id)),
+  ];
+  const incomingHidden = Array.isArray(layout?.hidden) ? layout.hidden : [];
+  const hidden = incomingHidden.filter((id, index): id is DashboardWidgetId => dashboardWidgetIds.includes(id as DashboardWidgetId) && incomingHidden.indexOf(id) === index);
+  return { order, hidden: hidden.length >= dashboardWidgetIds.length ? [] : hidden };
+}
+
+function loadDashboardLayout() {
+  if (typeof window === "undefined") return defaultDashboardLayout;
+  try {
+    return normalizeDashboardLayout(JSON.parse(window.localStorage.getItem(dashboardLayoutStorageKey) ?? "null") ?? defaultDashboardLayout);
+  } catch {
+    return defaultDashboardLayout;
   }
 }
 
@@ -451,97 +503,346 @@ function DashboardView({
 }) {
   const pieSegments = buildStatusPieSegments(summary.byStatus, summary.total);
   const selectedLocation = state.locations.find((location) => location.id === locationFilter);
+  const [dashboardLayout, setDashboardLayout] = useState<DashboardLayoutState>(defaultDashboardLayout);
+  const [dashboardLayoutReady, setDashboardLayoutReady] = useState(false);
+  const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [draggedWidget, setDraggedWidget] = useState<DashboardWidgetId | null>(null);
+  const [dragOverWidget, setDragOverWidget] = useState<DashboardWidgetId | null>(null);
+  const visibleWidgets = dashboardLayout.order.filter((id) => !dashboardLayout.hidden.includes(id));
+
+  useEffect(() => {
+    setDashboardLayout(loadDashboardLayout());
+    setDashboardLayoutReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (dashboardLayoutReady) window.localStorage.setItem(dashboardLayoutStorageKey, JSON.stringify(dashboardLayout));
+  }, [dashboardLayout, dashboardLayoutReady]);
+
+  function moveDashboardWidget(source: DashboardWidgetId, target: DashboardWidgetId) {
+    if (source === target) return;
+    setDashboardLayout((current) => {
+      const order = current.order.filter((id) => id !== source);
+      const targetIndex = order.indexOf(target);
+      order.splice(targetIndex < 0 ? order.length : targetIndex, 0, source);
+      return { ...current, order };
+    });
+  }
+
+  function toggleDashboardWidget(id: DashboardWidgetId) {
+    setDashboardLayout((current) => {
+      const isHidden = current.hidden.includes(id);
+      if (!isHidden && current.order.filter((widgetId) => !current.hidden.includes(widgetId)).length <= 1) return current;
+      return {
+        ...current,
+        hidden: isHidden ? current.hidden.filter((widgetId) => widgetId !== id) : [...current.hidden, id],
+      };
+    });
+  }
+
+  function resetDashboardLayout() {
+    setDashboardLayout(defaultDashboardLayout);
+    setDraggedWidget(null);
+    setDragOverWidget(null);
+  }
+
+  function shiftDashboardWidget(id: DashboardWidgetId, direction: -1 | 1) {
+    setDashboardLayout((current) => {
+      const visible = current.order.filter((widgetId) => !current.hidden.includes(widgetId));
+      const index = visible.indexOf(id);
+      const target = visible[index + direction];
+      if (!target) return current;
+      const order = current.order.filter((widgetId) => widgetId !== id);
+      const targetIndex = order.indexOf(target);
+      order.splice(direction < 0 ? targetIndex : targetIndex + 1, 0, id);
+      return { ...current, order };
+    });
+  }
+
+  function getWidgetIdFromPoint(x: number, y: number) {
+    const element = document.elementFromPoint(x, y)?.closest("[data-dashboard-widget-id]");
+    const id = element?.getAttribute("data-dashboard-widget-id") as DashboardWidgetId | null;
+    return id && dashboardWidgetIds.includes(id) ? id : null;
+  }
+
+  function renderDashboardWidget(id: DashboardWidgetId) {
+    switch (id) {
+      case "scope":
+        return (
+          <div className="panel dashboard-filter-panel">
+            <div className="panel-title"><Filter size={18} /><h3>{t(locale, "dashboard")}</h3></div>
+            <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
+              <option value="all">{t(locale, "allLocations")}</option>
+              {state.locations.filter((location) => location.active).map((location) => (
+                <option key={location.id} value={location.id}>{location.name}</option>
+              ))}
+            </select>
+            <div className="dashboard-scope">
+              <span>{t(locale, "dashboardScope")}</span>
+              <strong>{selectedLocation?.name ?? t(locale, "allLocations")}</strong>
+              <p>{summary.total} {t(locale, "scopedItems")}</p>
+            </div>
+          </div>
+        );
+      case "inventory":
+        return <InventoryInsightCardV2 locale={locale} summary={summary} setView={setView} />;
+      case "photos":
+        return <PhotoCoverageCardV2 locale={locale} summary={summary} setView={setView} />;
+      case "status":
+        return (
+          <div className="panel">
+            <div className="panel-title split-title">
+              <div><BarChart3 size={18} /><h3>{t(locale, "status")}</h3></div>
+              <div className="segmented-control" aria-label={t(locale, "statusChartMode")}>
+                <button className={chartMode === "lines" ? "active" : ""} onClick={() => setChartMode("lines")} type="button">
+                  <LineChart size={15} />
+                  {t(locale, "chartLines")}
+                </button>
+                <button className={chartMode === "pie" ? "active" : ""} onClick={() => setChartMode("pie")} type="button">
+                  <PieChart size={15} />
+                  {t(locale, "chartPie")}
+                </button>
+              </div>
+            </div>
+            {chartMode === "lines" ? (
+              <div className="status-bars">
+                {statuses.map((status) => {
+                  const count = summary.byStatus[status];
+                  const width = summary.total === 0 ? 0 : (count / summary.total) * 100;
+                  return (
+                    <button className={`status-bar ${count === 0 ? "is-zero" : ""}`} key={status} onClick={() => setView("inventory")} type="button">
+                      <span>{statusLabels[locale][status]}</span>
+                      <div><i style={{ width: `${width}%`, background: statusColors[status] }} /></div>
+                      <strong>{count}</strong>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="status-pie-layout">
+                <button
+                  className="status-pie"
+                  onClick={() => setView("inventory")}
+                  style={{ background: pieSegments.length ? `conic-gradient(${pieSegments.join(", ")})` : "var(--media-bg)" }}
+                  type="button"
+                  aria-label={t(locale, "status")}
+                >
+                  <span>{summary.total}</span>
+                  <small>{t(locale, "totalItems")}</small>
+                </button>
+                <div className="status-legend">
+                  {statuses.map((status) => (
+                    <button key={status} onClick={() => setView("inventory")} type="button">
+                      <i style={{ background: statusColors[status] }} />
+                      <span>{statusLabels[locale][status]}</span>
+                      <strong>{summary.byStatus[status]}</strong>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case "locations":
+        return <LocationOverviewCardV2 locale={locale} state={state} setView={setView} />;
+      case "actions":
+        return (
+          <div className="panel recent-actions-panel">
+            <button className="panel-title action-title" onClick={() => setView("logs")} type="button">
+              <span><Activity size={18} /><h3>{t(locale, "recentActions")}</h3></span>
+              <strong>{t(locale, "viewAll")}</strong>
+            </button>
+            <ActionActivityChart actions={state.actions} locale={locale} />
+            <div className="compact-list">
+              {state.actions.slice(0, 5).map((action) => (
+                <div key={action.id}>
+                  <span>{actionLabel(locale, action.type)}</span>
+                  <strong>{new Date(action.at).toLocaleDateString()}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+    }
+  }
 
   return (
     <section className="dashboard-grid">
-      <div className="panel span-2 dashboard-filter-panel">
-        <div className="panel-title"><Filter size={18} /><h3>{t(locale, "dashboard")}</h3></div>
-        <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
-          <option value="all">{t(locale, "allLocations")}</option>
-          {state.locations.filter((location) => location.active).map((location) => (
-            <option key={location.id} value={location.id}>{location.name}</option>
-          ))}
-        </select>
-        <div className="dashboard-scope">
-          <span>{t(locale, "dashboardScope")}</span>
-          <strong>{selectedLocation?.name ?? t(locale, "allLocations")}</strong>
-          <p>{summary.total} {t(locale, "scopedItems")}</p>
+      <div className="dashboard-command-bar span-4">
+        <div>
+          <h2>{t(locale, "dashboard")}</h2>
+          <span>{visibleWidgets.length}/{dashboardWidgetIds.length}</span>
         </div>
+        <button className={`dashboard-customize-button ${customizerOpen ? "active" : ""}`} onClick={() => setCustomizerOpen((current) => !current)} type="button">
+          <SlidersHorizontal size={16} />
+          {t(locale, "customizeDashboard")}
+        </button>
       </div>
-      <InventoryInsightCardV2 locale={locale} summary={summary} setView={setView} />
-      <PhotoCoverageCardV2 locale={locale} summary={summary} setView={setView} />
 
-      <div className="panel span-2">
-        <div className="panel-title split-title">
-          <div><BarChart3 size={18} /><h3>{t(locale, "status")}</h3></div>
-          <div className="segmented-control" aria-label={t(locale, "statusChartMode")}>
-            <button className={chartMode === "lines" ? "active" : ""} onClick={() => setChartMode("lines")} type="button">
-              <LineChart size={15} />
-              {t(locale, "chartLines")}
-            </button>
-            <button className={chartMode === "pie" ? "active" : ""} onClick={() => setChartMode("pie")} type="button">
-              <PieChart size={15} />
-              {t(locale, "chartPie")}
+      {customizerOpen && (
+        <div className="panel dashboard-customizer-panel span-4">
+          <div className="panel-title split-title">
+            <div><SlidersHorizontal size={18} /><h3>{t(locale, "dashboardCustomization")}</h3></div>
+            <button
+              className="secondary-tool-button"
+              onClick={resetDashboardLayout}
+              type="button"
+            >
+              <RotateCcw size={15} />
+              {t(locale, "resetLayout")}
             </button>
           </div>
-        </div>
-        {chartMode === "lines" ? (
-          <div className="status-bars">
-            {statuses.map((status) => {
-              const count = summary.byStatus[status];
-              const width = summary.total === 0 ? 0 : (count / summary.total) * 100;
+          <div className="dashboard-widget-toggle-grid">
+            {dashboardLayout.order.map((id) => {
+              const active = !dashboardLayout.hidden.includes(id);
               return (
-                <button className={`status-bar ${count === 0 ? "is-zero" : ""}`} key={status} onClick={() => setView("inventory")} type="button">
-                  <span>{statusLabels[locale][status]}</span>
-                  <div><i style={{ width: `${width}%`, background: statusColors[status] }} /></div>
-                  <strong>{count}</strong>
+                <button className={active ? "active" : ""} key={id} onClick={() => toggleDashboardWidget(id)} type="button">
+                  {active ? <Eye size={16} /> : <EyeOff size={16} />}
+                  <span>{t(locale, dashboardWidgetLabels[id])}</span>
                 </button>
               );
             })}
           </div>
-        ) : (
-          <div className="status-pie-layout">
-            <button
-              className="status-pie"
-              onClick={() => setView("inventory")}
-              style={{ background: pieSegments.length ? `conic-gradient(${pieSegments.join(", ")})` : "var(--media-bg)" }}
-              type="button"
-              aria-label={t(locale, "status")}
-            >
-              <span>{summary.total}</span>
-              <small>{t(locale, "totalItems")}</small>
-            </button>
-            <div className="status-legend">
-              {statuses.map((status) => (
-                <button key={status} onClick={() => setView("inventory")} type="button">
-                  <i style={{ background: statusColors[status] }} />
-                  <span>{statusLabels[locale][status]}</span>
-                  <strong>{summary.byStatus[status]}</strong>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <LocationOverviewCardV2 locale={locale} state={state} setView={setView} />
-
-      <div className="panel recent-actions-panel span-2">
-        <button className="panel-title action-title" onClick={() => setView("logs")} type="button">
-          <span><Activity size={18} /><h3>{t(locale, "recentActions")}</h3></span>
-          <strong>{t(locale, "viewAll")}</strong>
-        </button>
-        <ActionActivityChart actions={state.actions} locale={locale} />
-        <div className="compact-list">
-          {state.actions.slice(0, 5).map((action) => (
-            <div key={action.id}>
-              <span>{actionLabel(locale, action.type)}</span>
-              <strong>{new Date(action.at).toLocaleDateString()}</strong>
-            </div>
-          ))}
         </div>
-      </div>
+      )}
+
+      {visibleWidgets.map((id) => (
+        <DashboardWidgetFrame
+          id={id}
+          key={id}
+          locale={locale}
+          span={dashboardWidgetSpans[id]}
+          title={t(locale, dashboardWidgetLabels[id])}
+          isDragging={draggedWidget === id}
+          isDragOver={dragOverWidget === id && draggedWidget !== id}
+          onDragStart={(widgetId, event) => {
+            setDraggedWidget(widgetId);
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", widgetId);
+          }}
+          onDragOver={(widgetId, event) => {
+            const source = (event.dataTransfer.getData("text/plain") || draggedWidget) as DashboardWidgetId | null;
+            if (!source || source === widgetId) return;
+            event.preventDefault();
+            setDragOverWidget(widgetId);
+          }}
+          onDrop={(widgetId, event) => {
+            event.preventDefault();
+            const source = (event.dataTransfer.getData("text/plain") || draggedWidget) as DashboardWidgetId | null;
+            if (source && dashboardWidgetIds.includes(source)) moveDashboardWidget(source, widgetId);
+            setDraggedWidget(null);
+            setDragOverWidget(null);
+          }}
+          onDragEnd={() => {
+            setDraggedWidget(null);
+            setDragOverWidget(null);
+          }}
+          onMovePrevious={(widgetId) => shiftDashboardWidget(widgetId, -1)}
+          onMoveNext={(widgetId) => shiftDashboardWidget(widgetId, 1)}
+          canMovePrevious={visibleWidgets.indexOf(id) > 0}
+          canMoveNext={visibleWidgets.indexOf(id) < visibleWidgets.length - 1}
+          onPointerStart={(widgetId, event) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            setDraggedWidget(widgetId);
+          }}
+          onPointerMove={(widgetId, event) => {
+            const target = getWidgetIdFromPoint(event.clientX, event.clientY);
+            if (target && target !== widgetId) setDragOverWidget(target);
+          }}
+          onPointerEnd={(widgetId, event) => {
+            const target = getWidgetIdFromPoint(event.clientX, event.clientY);
+            if (target && target !== widgetId) moveDashboardWidget(widgetId, target);
+            setDraggedWidget(null);
+            setDragOverWidget(null);
+          }}
+        >
+          {renderDashboardWidget(id)}
+        </DashboardWidgetFrame>
+      ))}
+
+      {visibleWidgets.length === 0 && (
+        <div className="panel empty-state span-4">
+          <h3>{t(locale, "emptyDashboard")}</h3>
+          <button className="primary-button" onClick={resetDashboardLayout} type="button">
+            <RotateCcw size={17} />
+            {t(locale, "resetLayout")}
+          </button>
+        </div>
+      )}
     </section>
+  );
+}
+
+function DashboardWidgetFrame({
+  id,
+  locale,
+  span,
+  title,
+  isDragging,
+  isDragOver,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onMovePrevious,
+  onMoveNext,
+  canMovePrevious,
+  canMoveNext,
+  onPointerStart,
+  onPointerMove,
+  onPointerEnd,
+  children,
+}: {
+  id: DashboardWidgetId;
+  locale: Locale;
+  span: 1 | 2;
+  title: string;
+  isDragging: boolean;
+  isDragOver: boolean;
+  onDragStart: (id: DashboardWidgetId, event: DragEvent<HTMLButtonElement>) => void;
+  onDragOver: (id: DashboardWidgetId, event: DragEvent<HTMLDivElement>) => void;
+  onDrop: (id: DashboardWidgetId, event: DragEvent<HTMLDivElement>) => void;
+  onDragEnd: () => void;
+  onMovePrevious: (id: DashboardWidgetId) => void;
+  onMoveNext: (id: DashboardWidgetId) => void;
+  canMovePrevious: boolean;
+  canMoveNext: boolean;
+  onPointerStart: (id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) => void;
+  onPointerMove: (id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) => void;
+  onPointerEnd: (id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`dashboard-widget-frame ${span === 2 ? "span-2" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
+      data-dashboard-widget-id={id}
+      onDragOver={(event) => onDragOver(id, event)}
+      onDrop={(event) => onDrop(id, event)}
+    >
+      <button
+        aria-label={`${t(locale, "moveWidget")} ${title}`}
+        className="dashboard-drag-handle"
+        draggable
+        onDragStart={(event) => onDragStart(id, event)}
+        onDragEnd={onDragEnd}
+        onPointerDown={(event) => onPointerStart(id, event)}
+        onPointerMove={(event) => onPointerMove(id, event)}
+        onPointerUp={(event) => onPointerEnd(id, event)}
+        onPointerCancel={onDragEnd}
+        type="button"
+      >
+        <GripVertical size={15} />
+      </button>
+      <div className="dashboard-widget-order-controls">
+        <button aria-label={`${t(locale, "moveWidgetPrevious")} ${title}`} disabled={!canMovePrevious} onClick={() => onMovePrevious(id)} type="button">
+          <ArrowLeft size={14} />
+        </button>
+        <button aria-label={`${t(locale, "moveWidgetNext")} ${title}`} disabled={!canMoveNext} onClick={() => onMoveNext(id)} type="button">
+          <ArrowRight size={14} />
+        </button>
+      </div>
+      {children}
+    </div>
   );
 }
 

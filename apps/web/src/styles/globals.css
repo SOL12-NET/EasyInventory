@@ -422,6 +422,176 @@ html[data-theme="dark"] .moon-icon {
   grid-column: 1 / -1;
 }
 
+.dashboard-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.dashboard-command-bar h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.dashboard-command-bar span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.dashboard-customize-button,
+.secondary-tool-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--ink);
+  min-height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.dashboard-customize-button.active,
+.dashboard-customize-button:hover,
+.secondary-tool-button:hover {
+  border-color: rgba(20, 184, 166, 0.54);
+  background: var(--search-count-bg);
+  color: var(--primary-dark);
+}
+
+.dashboard-customizer-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-widget-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-widget-toggle-grid button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+  color: var(--muted);
+  min-height: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  font-size: 0.84rem;
+  font-weight: 850;
+  text-align: left;
+}
+
+.dashboard-widget-toggle-grid button.active {
+  border-color: rgba(20, 184, 166, 0.42);
+  background: var(--search-count-bg);
+  color: var(--ink);
+}
+
+.dashboard-widget-frame {
+  position: relative;
+  min-width: 0;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.dashboard-widget-frame > .panel,
+.dashboard-widget-frame > .insight-card {
+  width: 100%;
+  height: 100%;
+}
+
+.dashboard-widget-frame.is-dragging {
+  opacity: 0.55;
+  transform: scale(0.985);
+}
+
+.dashboard-widget-frame.is-drag-over > .panel,
+.dashboard-widget-frame.is-drag-over > .insight-card {
+  border-color: rgba(20, 184, 166, 0.82);
+  box-shadow: 0 22px 48px rgba(20, 184, 166, 0.15);
+}
+
+.dashboard-drag-handle {
+  position: absolute;
+  z-index: 5;
+  top: -9px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease;
+  cursor: grab;
+}
+
+.dashboard-widget-frame:hover .dashboard-drag-handle,
+.dashboard-drag-handle:focus-visible {
+  opacity: 1;
+}
+
+.dashboard-drag-handle:active {
+  cursor: grabbing;
+}
+
+.dashboard-drag-handle:hover {
+  border-color: rgba(20, 184, 166, 0.58);
+  color: var(--primary-dark);
+}
+
+.dashboard-widget-order-controls {
+  position: absolute;
+  z-index: 5;
+  top: -9px;
+  right: 48px;
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.dashboard-widget-frame:hover .dashboard-widget-order-controls,
+.dashboard-widget-order-controls:focus-within {
+  opacity: 1;
+}
+
+.dashboard-widget-order-controls button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+}
+
+.dashboard-widget-order-controls button:hover:not(:disabled) {
+  border-color: rgba(20, 184, 166, 0.58);
+  color: var(--primary-dark);
+}
+
+.dashboard-widget-order-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .metric-card {
   min-height: 132px;
   padding: 18px;
@@ -1978,6 +2148,10 @@ textarea:disabled,
     grid-template-columns: 1fr;
   }
 
+  .dashboard-widget-toggle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .doc-index {
     position: static;
   }
@@ -2054,6 +2228,19 @@ textarea:disabled,
   .topbar-actions select,
   .topbar-actions .primary-button {
     flex: 1;
+  }
+
+  .dashboard-command-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-customize-button {
+    width: 100%;
+  }
+
+  .dashboard-widget-toggle-grid {
+    grid-template-columns: 1fr;
   }
 
   .primary-button {
