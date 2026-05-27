@@ -549,8 +549,21 @@ html[data-theme="dark"] .moon-icon {
   will-change: transform;
 }
 
+.dashboard-widget-surface.is-floating {
+  pointer-events: none;
+  filter: drop-shadow(0 28px 42px rgba(15, 23, 42, 0.2));
+  will-change: left, top;
+}
+
+.dashboard-widget-surface.is-floating .dashboard-drag-handle,
+.dashboard-widget-surface.is-floating .dashboard-widget-order-controls {
+  opacity: 1;
+}
+
 .dashboard-widget-frame.is-pointer-dragging .dashboard-widget-surface > .panel,
-.dashboard-widget-frame.is-pointer-dragging .dashboard-widget-surface > .insight-card {
+.dashboard-widget-frame.is-pointer-dragging .dashboard-widget-surface > .insight-card,
+.dashboard-widget-surface.is-floating > .panel,
+.dashboard-widget-surface.is-floating > .insight-card {
   border-color: rgba(20, 184, 166, 0.9);
 }
 

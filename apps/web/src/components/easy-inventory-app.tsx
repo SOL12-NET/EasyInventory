@@ -31,7 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type PointerEvent, type ReactNode } from "react";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { InventoryCardsView } from "@/components/inventory-cards-view";
 import {
   addLocation,
@@ -640,10 +640,9 @@ function DashboardView({
     if (!drag || drag.id !== id || !drag.active) return undefined;
     return {
       height: drag.height,
-      left: drag.startX - drag.offsetX,
+      left: drag.x - drag.offsetX,
       position: "fixed",
-      top: drag.startY - drag.offsetY,
-      transform: `translate3d(${drag.x - drag.startX}px, ${drag.y - drag.startY}px, 0)`,
+      top: drag.y - drag.offsetY,
       transformOrigin: `${drag.offsetX}px ${drag.offsetY}px`,
       transition: "none",
       width: drag.width,
@@ -1023,55 +1022,62 @@ function DashboardWidgetFrame({
   onMoveTarget: (id: DashboardWidgetId) => void;
   children: ReactNode;
 }) {
-  return (
-    <div
-      className={`dashboard-widget-frame ${span === 2 ? "span-2" : ""} ${isDragging ? "is-dragging" : ""} ${isPointerDragging ? "is-pointer-dragging" : ""} ${isDragOver ? "is-drag-over" : ""} ${isMoveSource ? "is-move-source" : ""} ${isMoveTarget ? "is-move-target" : ""}`}
-      data-dashboard-widget-id={id}
-      onDragOver={(event) => onDragOver(id, event)}
-      onDrop={(event) => onDrop(id, event)}
-      ref={(node) => registerWidget(id, node)}
-      style={placeholderStyle}
-    >
-      <div className="dashboard-widget-surface" style={dragStyle}>
+  const widgetSurface = (
+    <div className={`dashboard-widget-surface ${isPointerDragging ? "is-floating" : ""}`} style={dragStyle}>
+      <button
+        aria-label={`${t(locale, "moveWidget")} ${title}`}
+        className="dashboard-drag-handle"
+        title={t(locale, "moveWidget")}
+        onDragStart={(event) => onDragStart(id, event)}
+        onDragEnd={onDragEnd}
+        onClick={(event) => {
+          event.preventDefault();
+          onActivateMove(id);
+        }}
+        onPointerDown={(event) => onPointerStart(id, event)}
+        type="button"
+      >
+        <GripVertical size={15} />
+      </button>
+      <div className="dashboard-widget-order-controls">
+        <button aria-label={`${t(locale, "moveWidgetPrevious")} ${title}`} disabled={!canMovePrevious} onClick={() => onMovePrevious(id)} type="button">
+          <ArrowLeft size={14} />
+        </button>
+        <button aria-label={`${t(locale, "moveWidgetNext")} ${title}`} disabled={!canMoveNext} onClick={() => onMoveNext(id)} type="button">
+          <ArrowRight size={14} />
+        </button>
+      </div>
+      {(isMoveSource || isMoveTarget) && (
         <button
-          aria-label={`${t(locale, "moveWidget")} ${title}`}
-          className="dashboard-drag-handle"
-          title={t(locale, "moveWidget")}
-          onDragStart={(event) => onDragStart(id, event)}
-          onDragEnd={onDragEnd}
+          aria-label={isMoveSource ? `${t(locale, "cancelMove")} ${title}` : `${t(locale, "placeWidgetHere")} ${title}`}
+          className="dashboard-move-target"
           onClick={(event) => {
             event.preventDefault();
-            onActivateMove(id);
+            onMoveTarget(id);
           }}
-          onPointerDown={(event) => onPointerStart(id, event)}
           type="button"
         >
-          <GripVertical size={15} />
+          <span>{isMoveSource ? t(locale, "movingWidget") : t(locale, "placeHere")}</span>
         </button>
-        <div className="dashboard-widget-order-controls">
-          <button aria-label={`${t(locale, "moveWidgetPrevious")} ${title}`} disabled={!canMovePrevious} onClick={() => onMovePrevious(id)} type="button">
-            <ArrowLeft size={14} />
-          </button>
-          <button aria-label={`${t(locale, "moveWidgetNext")} ${title}`} disabled={!canMoveNext} onClick={() => onMoveNext(id)} type="button">
-            <ArrowRight size={14} />
-          </button>
-        </div>
-        {(isMoveSource || isMoveTarget) && (
-          <button
-            aria-label={isMoveSource ? `${t(locale, "cancelMove")} ${title}` : `${t(locale, "placeWidgetHere")} ${title}`}
-            className="dashboard-move-target"
-            onClick={(event) => {
-              event.preventDefault();
-              onMoveTarget(id);
-            }}
-            type="button"
-          >
-            <span>{isMoveSource ? t(locale, "movingWidget") : t(locale, "placeHere")}</span>
-          </button>
-        )}
-        {children}
-      </div>
+      )}
+      {children}
     </div>
+  );
+
+  return (
+    <>
+      <div
+        className={`dashboard-widget-frame ${span === 2 ? "span-2" : ""} ${isDragging ? "is-dragging" : ""} ${isPointerDragging ? "is-pointer-dragging" : ""} ${isDragOver ? "is-drag-over" : ""} ${isMoveSource ? "is-move-source" : ""} ${isMoveTarget ? "is-move-target" : ""}`}
+        data-dashboard-widget-id={id}
+        onDragOver={(event) => onDragOver(id, event)}
+        onDrop={(event) => onDrop(id, event)}
+        ref={(node) => registerWidget(id, node)}
+        style={placeholderStyle}
+      >
+        {!isPointerDragging && widgetSurface}
+      </div>
+      {isPointerDragging && dragStyle && typeof document !== "undefined" ? createPortal(widgetSurface, document.body) : null}
+    </>
   );
 }
 
