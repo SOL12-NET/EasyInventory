@@ -50,11 +50,11 @@ const storageKey = "easyinventory.saas.demo-state";
 const themeStorageKey = "easyinventory.saas.theme";
 const roleStorageKey = "easyinventory.saas.demo-role";
 const statusColors: Record<ItemStatus, string> = {
-  AVAILABLE: "#0f766e",
-  RENTED: "#2563eb",
-  REPAIR: "#d97706",
+  AVAILABLE: "#14b8a6",
+  RENTED: "#60a5fa",
+  REPAIR: "#f59e0b",
   SOLD: "#475569",
-  LOST: "#dc2626",
+  LOST: "#f43f5e",
   DUPLICATE: "#94a3b8",
 };
 const actionColors = ["#14b8a6", "#60a5fa", "#f59e0b", "#f43f5e", "#a78bfa", "#22c55e", "#e879f9", "#64748b"];
@@ -751,11 +751,14 @@ function LocationOverviewCardV2({
       {locationMode === "bars" ? (
         <div className="location-usage-list">
           {visible.map((location, index) => (
-            <button key={location.id} className="location-usage-row" onClick={() => setView("locations")} type="button">
-              <span className="location-label">
-                <strong>{location.name}</strong>
-                <small className={`location-state ${location.active ? "active" : ""}`}>{location.active ? t(locale, "active") : t(locale, "inactive")}</small>
-              </span>
+            <button
+              key={location.id}
+              aria-label={`${location.name} - ${location.active ? t(locale, "active") : t(locale, "inactive")}`}
+              className="location-usage-row"
+              onClick={() => setView("locations")}
+              type="button"
+            >
+              <span>{location.name}</span>
               <div><i style={{ width: `${(location.count / max) * 100}%`, background: locationColors[index % locationColors.length] }} /></div>
               <strong>{location.count}</strong>
             </button>

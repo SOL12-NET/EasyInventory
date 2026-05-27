@@ -737,11 +737,11 @@ html[data-theme="dark"] .moon-icon {
   border: 0;
   background: transparent;
   display: grid;
-  grid-template-columns: 172px minmax(0, 1fr) 34px;
+  grid-template-columns: 112px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 10px;
-  height: 25px;
-  min-height: 0;
+  height: 24px;
+  max-height: 24px;
   padding: 0;
   color: var(--ink);
   text-align: left;
@@ -771,31 +771,14 @@ html[data-theme="dark"] .moon-icon {
   color: var(--ok);
 }
 
-.location-label,
-.location-label strong {
-  min-width: 0;
-}
-
-.location-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.location-label strong {
-  display: block;
-  flex: 1;
+.location-usage-row > span {
   overflow: hidden;
   color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 800;
-  line-height: 1.15;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.location-label .location-state {
-  flex: 0 0 auto;
 }
 
 .location-usage-row > div {
@@ -814,7 +797,9 @@ html[data-theme="dark"] .moon-icon {
 
 .location-usage-row > strong {
   color: var(--ink);
-  font-size: 0.92rem;
+  font-size: inherit;
+  font-weight: 700;
+  line-height: inherit;
   text-align: right;
 }
 
