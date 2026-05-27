@@ -758,7 +758,10 @@ function LocationOverviewCardV2({
               onClick={() => setView("locations")}
               type="button"
             >
-              <span>{location.name}</span>
+              <span className="location-label">
+                <span className="location-name">{location.name}</span>
+                <small className={`location-state ${location.active ? "active" : ""}`}>{location.active ? t(locale, "active") : t(locale, "inactive")}</small>
+              </span>
               <div><i style={{ width: `${(location.count / max) * 100}%`, background: locationColors[index % locationColors.length] }} /></div>
               <strong>{location.count}</strong>
             </button>
