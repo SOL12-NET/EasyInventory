@@ -501,7 +501,8 @@ html[data-theme="dark"] .moon-icon {
 .dashboard-widget-frame {
   position: relative;
   min-width: 0;
-  transition: opacity 160ms ease, transform 160ms ease;
+  will-change: transform;
+  transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dashboard-widget-frame > .panel,
@@ -513,6 +514,18 @@ html[data-theme="dark"] .moon-icon {
 .dashboard-widget-frame.is-dragging {
   opacity: 0.55;
   transform: scale(0.985);
+}
+
+.dashboard-widget-frame.is-pointer-dragging {
+  opacity: 0.96;
+  transform: rotate(0.45deg) scale(1.015);
+  pointer-events: none;
+  filter: drop-shadow(0 28px 42px rgba(15, 23, 42, 0.2));
+}
+
+.dashboard-widget-frame.is-pointer-dragging > .panel,
+.dashboard-widget-frame.is-pointer-dragging > .insight-card {
+  border-color: rgba(20, 184, 166, 0.9);
 }
 
 .dashboard-widget-frame.is-drag-over > .panel,
@@ -550,6 +563,7 @@ html[data-theme="dark"] .moon-icon {
   transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease;
   cursor: grab;
   touch-action: none;
+  user-select: none;
 }
 
 .dashboard-widget-frame:hover .dashboard-drag-handle,

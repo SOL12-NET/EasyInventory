@@ -30,7 +30,7 @@ import {
   Warehouse,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ChangeEvent, type DragEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type PointerEvent, type ReactNode } from "react";
 import { InventoryCardsView } from "@/components/inventory-cards-view";
 import {
   addLocation,
@@ -57,6 +57,19 @@ type DashboardWidgetId = "scope" | "inventory" | "photos" | "status" | "location
 type DashboardLayoutState = {
   order: DashboardWidgetId[];
   hidden: DashboardWidgetId[];
+};
+type DashboardPointerDrag = {
+  id: DashboardWidgetId;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  x: number;
+  y: number;
+  offsetX: number;
+  offsetY: number;
+  width: number;
+  height: number;
+  active: boolean;
 };
 
 const storageKey = "easyinventory.saas.demo-state";
@@ -509,6 +522,10 @@ function DashboardView({
   const [draggedWidget, setDraggedWidget] = useState<DashboardWidgetId | null>(null);
   const [dragOverWidget, setDragOverWidget] = useState<DashboardWidgetId | null>(null);
   const [activeMoveWidget, setActiveMoveWidget] = useState<DashboardWidgetId | null>(null);
+  const [pointerDrag, setPointerDrag] = useState<DashboardPointerDrag | null>(null);
+  const widgetRefs = useRef(new Map<DashboardWidgetId, HTMLDivElement>());
+  const pointerDragRef = useRef<DashboardPointerDrag | null>(null);
+  const suppressHandleClickRef = useRef(false);
   const visibleWidgets = dashboardLayout.order.filter((id) => !dashboardLayout.hidden.includes(id));
 
   useEffect(() => {
@@ -520,15 +537,99 @@ function DashboardView({
     if (dashboardLayoutReady) window.localStorage.setItem(dashboardLayoutStorageKey, JSON.stringify(dashboardLayout));
   }, [dashboardLayout, dashboardLayoutReady]);
 
-  function moveDashboardWidget(source: DashboardWidgetId, target: DashboardWidgetId) {
+  useEffect(() => {
+    pointerDragRef.current = pointerDrag;
+  }, [pointerDrag?.id]);
+
+  useEffect(() => {
+    if (!pointerDrag) return;
+
+    function handlePointerMove(event: globalThis.PointerEvent) {
+      const current = pointerDragRef.current;
+      if (!current || event.pointerId !== current.pointerId) return;
+      const distanceX = event.clientX - current.startX;
+      const distanceY = event.clientY - current.startY;
+      const active = current.active || Math.hypot(distanceX, distanceY) > 6;
+      const next = { ...current, x: event.clientX, y: event.clientY, active };
+      pointerDragRef.current = next;
+      setPointerDrag(next);
+      if (!active) return;
+
+      const target = getWidgetIdFromPoint(event.clientX, event.clientY, current.id);
+      if (target && target !== current.id) {
+        setDragOverWidget(target);
+        moveDashboardWidget(current.id, target, { clearMove: false, skipAnimationFor: current.id });
+      }
+    }
+
+    function handlePointerEnd(event: globalThis.PointerEvent) {
+      const current = pointerDragRef.current;
+      if (!current || event.pointerId !== current.pointerId) return;
+      suppressHandleClickRef.current = current.active;
+      window.setTimeout(() => {
+        suppressHandleClickRef.current = false;
+      }, 0);
+      pointerDragRef.current = null;
+      setPointerDrag(null);
+      setDraggedWidget(null);
+      setDragOverWidget(null);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerEnd);
+    window.addEventListener("pointercancel", handlePointerEnd);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
+    };
+  }, [pointerDrag?.id]);
+
+  function getWidgetRects() {
+    const rects = new Map<DashboardWidgetId, DOMRect>();
+    widgetRefs.current.forEach((node, id) => rects.set(id, node.getBoundingClientRect()));
+    return rects;
+  }
+
+  function animateWidgetLayout(firstRects: Map<DashboardWidgetId, DOMRect>, skipId?: DashboardWidgetId) {
+    window.requestAnimationFrame(() => {
+      const lastRects = getWidgetRects();
+      widgetRefs.current.forEach((node, id) => {
+        if (id === skipId) return;
+        const first = firstRects.get(id);
+        const last = lastRects.get(id);
+        if (!first || !last) return;
+        const deltaX = first.left - last.left;
+        const deltaY = first.top - last.top;
+        if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+        node.animate(
+          [
+            { transform: `translate(${deltaX}px, ${deltaY}px)` },
+            { transform: "translate(0, 0)" },
+          ],
+          { duration: 260, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+        );
+      });
+    });
+  }
+
+  function getMovedWidgetOrder(order: DashboardWidgetId[], source: DashboardWidgetId, target: DashboardWidgetId) {
+    const nextOrder = order.filter((id) => id !== source);
+    const targetIndex = nextOrder.indexOf(target);
+    nextOrder.splice(targetIndex < 0 ? nextOrder.length : targetIndex, 0, source);
+    return nextOrder;
+  }
+
+  function moveDashboardWidget(source: DashboardWidgetId, target: DashboardWidgetId, options: { clearMove?: boolean; skipAnimationFor?: DashboardWidgetId } = {}) {
     if (source === target) return;
+    const firstRects = getWidgetRects();
     setDashboardLayout((current) => {
-      const order = current.order.filter((id) => id !== source);
-      const targetIndex = order.indexOf(target);
-      order.splice(targetIndex < 0 ? order.length : targetIndex, 0, source);
+      const order = getMovedWidgetOrder(current.order, source, target);
+      if (order.join("|") === current.order.join("|")) return current;
       return { ...current, order };
     });
-    setActiveMoveWidget(null);
+    animateWidgetLayout(firstRects, options.skipAnimationFor);
+    if (options.clearMove !== false) setActiveMoveWidget(null);
   }
 
   function toggleDashboardWidget(id: DashboardWidgetId) {
@@ -547,9 +648,11 @@ function DashboardView({
     setDraggedWidget(null);
     setDragOverWidget(null);
     setActiveMoveWidget(null);
+    setPointerDrag(null);
   }
 
   function shiftDashboardWidget(id: DashboardWidgetId, direction: -1 | 1) {
+    const firstRects = getWidgetRects();
     setDashboardLayout((current) => {
       const visible = current.order.filter((widgetId) => !current.hidden.includes(widgetId));
       const index = visible.indexOf(id);
@@ -560,12 +663,46 @@ function DashboardView({
       order.splice(direction < 0 ? targetIndex : targetIndex + 1, 0, id);
       return { ...current, order };
     });
+    animateWidgetLayout(firstRects);
   }
 
-  function getWidgetIdFromPoint(x: number, y: number) {
-    const element = document.elementsFromPoint(x, y).find((entry) => entry.hasAttribute("data-dashboard-widget-id") || entry.closest("[data-dashboard-widget-id]"))?.closest("[data-dashboard-widget-id]");
+  function getWidgetIdFromPoint(x: number, y: number, ignoreId?: DashboardWidgetId) {
+    const element = document.elementsFromPoint(x, y)
+      .map((entry) => entry.hasAttribute("data-dashboard-widget-id") ? entry : entry.closest("[data-dashboard-widget-id]"))
+      .find((entry) => entry?.getAttribute("data-dashboard-widget-id") !== ignoreId);
     const id = element?.getAttribute("data-dashboard-widget-id") as DashboardWidgetId | null;
     return id && dashboardWidgetIds.includes(id) ? id : null;
+  }
+
+  function registerDashboardWidget(id: DashboardWidgetId, node: HTMLDivElement | null) {
+    if (node) {
+      widgetRefs.current.set(id, node);
+      return;
+    }
+    widgetRefs.current.delete(id);
+  }
+
+  function startPointerWidgetDrag(id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) {
+    const frame = widgetRefs.current.get(id);
+    if (!frame) return;
+    const rect = frame.getBoundingClientRect();
+    const dragState = {
+      id,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      width: rect.width,
+      height: rect.height,
+      active: false,
+    };
+    pointerDragRef.current = dragState;
+    setPointerDrag(dragState);
+    setDraggedWidget(id);
+    setActiveMoveWidget(null);
   }
 
   function renderDashboardWidget(id: DashboardWidgetId) {
@@ -714,9 +851,19 @@ function DashboardView({
           id={id}
           key={id}
           locale={locale}
+          registerWidget={registerDashboardWidget}
           span={dashboardWidgetSpans[id]}
           title={t(locale, dashboardWidgetLabels[id])}
-          isDragging={draggedWidget === id}
+          dragStyle={pointerDrag?.id === id && pointerDrag.active ? {
+            height: pointerDrag.height,
+            left: pointerDrag.x - pointerDrag.offsetX,
+            position: "fixed",
+            top: pointerDrag.y - pointerDrag.offsetY,
+            width: pointerDrag.width,
+            zIndex: 50,
+          } : undefined}
+          isDragging={draggedWidget === id || pointerDrag?.id === id}
+          isPointerDragging={pointerDrag?.id === id && pointerDrag.active}
           isDragOver={dragOverWidget === id && draggedWidget !== id}
           isMoveSource={activeMoveWidget === id}
           isMoveTarget={Boolean(activeMoveWidget && activeMoveWidget !== id)}
@@ -746,7 +893,11 @@ function DashboardView({
           onMoveNext={(widgetId) => shiftDashboardWidget(widgetId, 1)}
           canMovePrevious={visibleWidgets.indexOf(id) > 0}
           canMoveNext={visibleWidgets.indexOf(id) < visibleWidgets.length - 1}
-          onActivateMove={(widgetId) => setActiveMoveWidget((current) => (current === widgetId ? null : widgetId))}
+          onActivateMove={(widgetId) => {
+            if (suppressHandleClickRef.current) return;
+            setActiveMoveWidget((current) => (current === widgetId ? null : widgetId));
+          }}
+          onPointerStart={startPointerWidgetDrag}
           onMoveTarget={(widgetId) => {
             if (!activeMoveWidget) return;
             if (activeMoveWidget === widgetId) {
@@ -776,9 +927,12 @@ function DashboardView({
 function DashboardWidgetFrame({
   id,
   locale,
+  registerWidget,
   span,
   title,
+  dragStyle,
   isDragging,
+  isPointerDragging,
   isDragOver,
   isMoveSource,
   isMoveTarget,
@@ -791,14 +945,18 @@ function DashboardWidgetFrame({
   canMovePrevious,
   canMoveNext,
   onActivateMove,
+  onPointerStart,
   onMoveTarget,
   children,
 }: {
   id: DashboardWidgetId;
   locale: Locale;
+  registerWidget: (id: DashboardWidgetId, node: HTMLDivElement | null) => void;
   span: 1 | 2;
   title: string;
+  dragStyle?: CSSProperties;
   isDragging: boolean;
+  isPointerDragging: boolean;
   isDragOver: boolean;
   isMoveSource: boolean;
   isMoveTarget: boolean;
@@ -811,15 +969,18 @@ function DashboardWidgetFrame({
   canMovePrevious: boolean;
   canMoveNext: boolean;
   onActivateMove: (id: DashboardWidgetId) => void;
+  onPointerStart: (id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) => void;
   onMoveTarget: (id: DashboardWidgetId) => void;
   children: ReactNode;
 }) {
   return (
     <div
-      className={`dashboard-widget-frame ${span === 2 ? "span-2" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""} ${isMoveSource ? "is-move-source" : ""} ${isMoveTarget ? "is-move-target" : ""}`}
+      className={`dashboard-widget-frame ${span === 2 ? "span-2" : ""} ${isDragging ? "is-dragging" : ""} ${isPointerDragging ? "is-pointer-dragging" : ""} ${isDragOver ? "is-drag-over" : ""} ${isMoveSource ? "is-move-source" : ""} ${isMoveTarget ? "is-move-target" : ""}`}
       data-dashboard-widget-id={id}
       onDragOver={(event) => onDragOver(id, event)}
       onDrop={(event) => onDrop(id, event)}
+      ref={(node) => registerWidget(id, node)}
+      style={dragStyle}
     >
       <button
         aria-label={`${t(locale, "moveWidget")} ${title}`}
@@ -831,6 +992,7 @@ function DashboardWidgetFrame({
           event.preventDefault();
           onActivateMove(id);
         }}
+        onPointerDown={(event) => onPointerStart(id, event)}
         type="button"
       >
         <GripVertical size={15} />
