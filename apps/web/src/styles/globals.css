@@ -415,7 +415,7 @@ html[data-theme="dark"] .moon-icon {
 }
 
 .dashboard-grid {
-  grid-auto-flow: dense;
+  grid-auto-flow: row;
   align-items: stretch;
 }
 

@@ -73,6 +73,12 @@ type DashboardPointerDrag = {
   active: boolean;
   lastMoveAt: number;
   lastTarget?: DashboardWidgetId;
+  lastPlacement?: DashboardDropPlacement;
+};
+type DashboardDropPlacement = "before" | "after";
+type DashboardDropTarget = {
+  id: DashboardWidgetId;
+  placement: DashboardDropPlacement;
 };
 
 const storageKey = "easyinventory.saas.demo-state";
@@ -558,9 +564,10 @@ function DashboardView({
       setPointerDrag(next);
       if (!active) return;
 
-      const target = getStableWidgetTarget(event.clientX, event.clientY, current.id);
+      const dropPoint = getDragDropPoint(next);
+      const target = getDashboardDropTarget(dropPoint.x, dropPoint.y, current.id);
       if (!target) {
-        const idle = { ...next, lastTarget: undefined };
+        const idle = { ...next, lastTarget: undefined, lastPlacement: undefined };
         pointerDragRef.current = idle;
         setPointerDrag(idle);
         setDragOverWidget(null);
@@ -568,18 +575,23 @@ function DashboardView({
       }
 
       const now = window.performance.now();
-      if (target !== current.lastTarget && now - current.lastMoveAt > 130) {
-        const moved = { ...next, lastMoveAt: now, lastTarget: target };
+      if ((target.id !== current.lastTarget || target.placement !== current.lastPlacement) && now - current.lastMoveAt > 110) {
+        const moved = { ...next, lastMoveAt: now, lastTarget: target.id, lastPlacement: target.placement };
         pointerDragRef.current = moved;
         setPointerDrag(moved);
-        setDragOverWidget(target);
-        moveDashboardWidget(current.id, target, { clearMove: false, skipAnimationFor: current.id });
+        setDragOverWidget(target.id);
+        moveDashboardWidget(current.id, target.id, { clearMove: false, placement: target.placement, skipAnimationFor: current.id });
       }
     }
 
     function handlePointerEnd(event: globalThis.PointerEvent) {
       const current = pointerDragRef.current;
       if (!current || event.pointerId !== current.pointerId) return;
+      if (current.active) {
+        const dropPoint = getDragDropPoint({ ...current, x: event.clientX, y: event.clientY });
+        const target = getDashboardDropTarget(dropPoint.x, dropPoint.y, current.id);
+        if (target) moveDashboardWidget(current.id, target.id, { clearMove: false, placement: target.placement, skipAnimationFor: current.id });
+      }
       suppressHandleClickRef.current = current.active;
       window.setTimeout(() => {
         suppressHandleClickRef.current = false;
@@ -606,6 +618,17 @@ function DashboardView({
     return rects;
   }
 
+  function getVisualWidgetOrder() {
+    return visibleWidgets
+      .map((id) => {
+        const node = widgetRefs.current.get(id);
+        return node ? { id, rect: node.getBoundingClientRect() } : null;
+      })
+      .filter((entry): entry is { id: DashboardWidgetId; rect: DOMRect } => Boolean(entry))
+      .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
+      .map((entry) => entry.id);
+  }
+
   function animateWidgetLayout(firstRects: Map<DashboardWidgetId, DOMRect>, skipId?: DashboardWidgetId) {
     const lastRects = getWidgetRects();
     widgetRefs.current.forEach((node, id) => {
@@ -626,12 +649,10 @@ function DashboardView({
     });
   }
 
-  function getMovedWidgetOrder(order: DashboardWidgetId[], source: DashboardWidgetId, target: DashboardWidgetId) {
-    const sourceIndex = order.indexOf(source);
-    const originalTargetIndex = order.indexOf(target);
+  function getMovedWidgetOrder(order: DashboardWidgetId[], source: DashboardWidgetId, target: DashboardWidgetId, placement: DashboardDropPlacement = "before") {
     const nextOrder = order.filter((id) => id !== source);
     const targetIndex = nextOrder.indexOf(target);
-    const insertIndex = targetIndex < 0 ? nextOrder.length : sourceIndex < originalTargetIndex ? targetIndex + 1 : targetIndex;
+    const insertIndex = targetIndex < 0 ? nextOrder.length : targetIndex + (placement === "after" ? 1 : 0);
     nextOrder.splice(insertIndex, 0, source);
     return nextOrder;
   }
@@ -650,13 +671,26 @@ function DashboardView({
     };
   }
 
-  function moveDashboardWidget(source: DashboardWidgetId, target: DashboardWidgetId, options: { clearMove?: boolean; skipAnimationFor?: DashboardWidgetId } = {}) {
+  function getDragDropPoint(drag: DashboardPointerDrag) {
+    return {
+      x: drag.x - drag.offsetX + drag.width / 2,
+      y: drag.y - drag.offsetY + drag.height / 2,
+    };
+  }
+
+  function moveDashboardWidget(source: DashboardWidgetId, target: DashboardWidgetId, options: { clearMove?: boolean; placement?: DashboardDropPlacement; skipAnimationFor?: DashboardWidgetId } = {}) {
     if (source === target) return;
     const firstRects = getWidgetRects();
+    const visualOrder = getVisualWidgetOrder();
     let moved = false;
     flushSync(() => {
       setDashboardLayout((current) => {
-        const order = getMovedWidgetOrder(current.order, source, target);
+        const hiddenOrder = current.order.filter((id) => current.hidden.includes(id));
+        const orderedVisible = [
+          ...visualOrder.filter((id) => current.order.includes(id)),
+          ...current.order.filter((id) => !current.hidden.includes(id) && !visualOrder.includes(id)),
+        ];
+        const order = [...getMovedWidgetOrder(orderedVisible, source, target, options.placement), ...hiddenOrder];
         if (order.join("|") === current.order.join("|")) return current;
         moved = true;
         return { ...current, order };
@@ -704,24 +738,42 @@ function DashboardView({
     if (moved) animateWidgetLayout(firstRects);
   }
 
-  function getStableWidgetTarget(x: number, y: number, ignoreId: DashboardWidgetId) {
-    let fallback: { id: DashboardWidgetId; distance: number } | null = null;
-    for (const id of visibleWidgets) {
-      if (id === ignoreId) continue;
-      const node = widgetRefs.current.get(id);
-      if (!node) continue;
-      const rect = node.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const distance = Math.hypot(x - centerX, y - centerY);
-      if (!fallback || distance < fallback.distance) fallback = { id, distance };
+  function getDashboardDropTarget(x: number, y: number, ignoreId: DashboardWidgetId): DashboardDropTarget | null {
+    const entries = visibleWidgets
+      .filter((id) => id !== ignoreId)
+      .map((id) => {
+        const node = widgetRefs.current.get(id);
+        if (!node) return null;
+        const rect = node.getBoundingClientRect();
+        return { id, rect };
+      })
+      .filter((entry): entry is { id: DashboardWidgetId; rect: DOMRect } => Boolean(entry));
 
-      const insetX = Math.min(44, rect.width * 0.18);
-      const insetY = Math.min(44, rect.height * 0.18);
-      const insideStableZone = x >= rect.left + insetX && x <= rect.right - insetX && y >= rect.top + insetY && y <= rect.bottom - insetY;
-      if (insideStableZone) return id;
+    if (entries.length === 0) return null;
+
+    const rows: Array<{ top: number; bottom: number; items: typeof entries }> = [];
+    for (const entry of [...entries].sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)) {
+      const row = rows.find((candidate) => Math.abs(candidate.top - entry.rect.top) < 36);
+      if (row) {
+        row.top = Math.min(row.top, entry.rect.top);
+        row.bottom = Math.max(row.bottom, entry.rect.bottom);
+        row.items.push(entry);
+      } else {
+        rows.push({ top: entry.rect.top, bottom: entry.rect.bottom, items: [entry] });
+      }
     }
-    return fallback && fallback.distance < 74 ? fallback.id : null;
+
+    const closestRow = rows.reduce((best, row) => {
+      const distance = y < row.top ? row.top - y : y > row.bottom ? y - row.bottom : 0;
+      return distance < best.distance ? { row, distance } : best;
+    }, { row: rows[0], distance: Number.POSITIVE_INFINITY }).row;
+
+    const rowItems = closestRow.items.sort((a, b) => a.rect.left - b.rect.left);
+    for (const entry of rowItems) {
+      const centerX = entry.rect.left + entry.rect.width / 2;
+      if (x < centerX) return { id: entry.id, placement: "before" };
+    }
+    return { id: rowItems[rowItems.length - 1].id, placement: "after" };
   }
 
   function registerDashboardWidget(id: DashboardWidgetId, node: HTMLDivElement | null) {
@@ -1027,8 +1079,12 @@ function DashboardWidgetFrame({
       <button
         aria-label={`${t(locale, "moveWidget")} ${title}`}
         className="dashboard-drag-handle"
+        draggable={false}
         title={t(locale, "moveWidget")}
-        onDragStart={(event) => onDragStart(id, event)}
+        onDragStart={(event) => {
+          event.preventDefault();
+          onDragStart(id, event);
+        }}
         onDragEnd={onDragEnd}
         onClick={(event) => {
           event.preventDefault();
