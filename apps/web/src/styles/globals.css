@@ -610,14 +610,16 @@ html[data-theme="dark"] .moon-icon {
   min-width: 0;
 }
 
-.status-pie-layout {
+.status-pie-layout,
+.location-pie-layout {
   display: grid;
   grid-template-columns: minmax(180px, 0.78fr) minmax(0, 1fr);
   align-items: center;
   gap: 18px;
 }
 
-.status-pie {
+.status-pie,
+.location-pie {
   position: relative;
   width: min(100%, 238px);
   aspect-ratio: 1;
@@ -632,7 +634,8 @@ html[data-theme="dark"] .moon-icon {
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
-.status-pie::after {
+.status-pie::after,
+.location-pie::after {
   content: "";
   position: absolute;
   inset: 20%;
@@ -642,28 +645,35 @@ html[data-theme="dark"] .moon-icon {
 }
 
 .status-pie span,
-.status-pie small {
+.status-pie small,
+.location-pie span,
+.location-pie small {
   position: relative;
   z-index: 1;
 }
 
-.status-pie span {
+.status-pie span,
+.location-pie span {
   font-size: 2.35rem;
   line-height: 1;
   font-weight: 900;
 }
 
-.status-pie small {
+.status-pie small,
+.location-pie small {
   color: var(--muted);
+  font-size: 0.86rem;
   font-weight: 850;
 }
 
-.status-legend {
+.status-legend,
+.location-pie-legend {
   display: grid;
   gap: 8px;
 }
 
-.status-legend button {
+.status-legend button,
+.location-pie-legend button {
   border: 0;
   border-radius: 8px;
   background: var(--surface-soft);
@@ -676,13 +686,15 @@ html[data-theme="dark"] .moon-icon {
   text-align: left;
 }
 
-.status-legend i {
+.status-legend i,
+.location-pie-legend i {
   width: 10px;
   height: 10px;
   border-radius: 999px;
 }
 
-.status-legend span {
+.status-legend span,
+.location-pie-legend span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -717,52 +729,40 @@ html[data-theme="dark"] .moon-icon {
 
 .location-usage-list {
   display: grid;
-  gap: 9px;
+  gap: 11px;
 }
 
 .location-usage-row {
+  appearance: none;
+  border: 0;
+  background: transparent;
   display: grid;
-  grid-template-columns: auto minmax(0, 0.9fr) minmax(96px, 1fr);
+  grid-template-columns: 172px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
-}
-
-.location-active-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: var(--surface-soft);
-  color: var(--muted);
-}
-
-.location-active-dot.active {
-  background: #dcfce7;
-  color: var(--ok);
+  height: 25px;
+  min-height: 0;
+  padding: 0;
+  color: var(--ink);
+  text-align: left;
 }
 
 .location-state {
-  min-width: 66px;
+  min-width: 58px;
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);
-  padding: 5px 8px;
+  padding: 3px 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   font-size: 0.72rem;
   font-weight: 850;
+  text-align: center;
 }
 
 .location-state::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: currentColor;
+  content: none;
 }
 
 .location-state.active {
@@ -771,113 +771,51 @@ html[data-theme="dark"] .moon-icon {
   color: var(--ok);
 }
 
-.location-pie-layout {
-  display: grid;
-  grid-template-columns: minmax(132px, 0.45fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
+.location-label,
+.location-label strong {
+  min-width: 0;
 }
 
-.location-pie {
-  position: relative;
-  width: min(100%, 154px);
-  aspect-ratio: 1;
-  justify-self: center;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-.location-pie::after {
-  content: "";
-  position: absolute;
-  inset: 25%;
-  border-radius: inherit;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-}
-
-.location-pie span,
-.location-pie small {
-  position: relative;
-  z-index: 1;
-}
-
-.location-pie span {
-  font-size: 1.7rem;
-  line-height: 1;
-  font-weight: 900;
-}
-
-.location-pie small {
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 850;
-}
-
-.location-pie-legend {
-  display: grid;
-  gap: 8px;
-}
-
-.location-pie-legend div {
-  display: grid;
-  grid-template-columns: 9px minmax(0, 1fr) auto;
+.location-label {
+  display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--meta);
-  font-size: 0.84rem;
 }
 
-.location-pie-legend i {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-}
-
-.location-pie-legend span {
+.location-label strong {
+  display: block;
+  flex: 1;
   overflow: hidden;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.open-locations-link {
-  width: fit-content;
-  border: 0;
-  border-radius: 999px;
-  background: var(--search-count-bg);
-  color: var(--primary-dark);
-  padding: 7px 10px;
-  font-size: 0.78rem;
-  font-weight: 850;
+.location-label .location-state {
+  flex: 0 0 auto;
 }
 
-.location-usage-row strong,
-.location-usage-row span {
-  display: block;
-}
-
-.location-usage-row span {
-  color: var(--muted);
-  font-size: 0.8rem;
-  margin-top: 2px;
-}
-
-.location-usage-row > i {
-  height: 9px;
+.location-usage-row > div {
+  height: 10px;
   border-radius: 999px;
   background: var(--media-bg);
   overflow: hidden;
 }
 
-.location-usage-row > i b {
+.location-usage-row > div i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--primary), #60a5fa);
+  transition: width 180ms ease;
+}
+
+.location-usage-row > strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+  text-align: right;
 }
 
 .compact-list,
@@ -1743,19 +1681,7 @@ textarea:disabled,
 }
 
 .action-chart-canvas path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  animation: draw-chart-line 780ms ease both;
-  filter: drop-shadow(0 6px 10px rgba(15, 23, 42, 0.18));
-}
-
-@keyframes draw-chart-line {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
+  filter: none;
 }
 
 .action-chart-canvas > span {
@@ -2180,11 +2106,11 @@ textarea:disabled,
   }
 
   .location-usage-row {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 34px;
   }
 
-  .location-usage-row > i {
-    grid-column: 2;
+  .location-usage-row > div {
+    grid-column: 1 / -1;
     width: 100%;
   }
 

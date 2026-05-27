@@ -8,7 +8,6 @@ import {
   CircleOff,
   Edit3,
   Filter,
-  Gauge,
   Image as ImageIcon,
   Layers3,
   LineChart,
@@ -263,7 +262,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
         <section className="hero-band">
           <div>
-            <p className="eyebrow"><Gauge size={14} /> {t(locale, "operatorFlow")} + {t(locale, "directorView")}</p>
             <h2>{t(locale, "appTagline")}</h2>
           </div>
         </section>
@@ -753,39 +751,40 @@ function LocationOverviewCardV2({
       {locationMode === "bars" ? (
         <div className="location-usage-list">
           {visible.map((location, index) => (
-            <div key={location.id} className="location-usage-row">
-              <span className={`location-state ${location.active ? "active" : ""}`}>{location.active ? t(locale, "active") : t(locale, "inactive")}</span>
-              <div>
+            <button key={location.id} className="location-usage-row" onClick={() => setView("locations")} type="button">
+              <span className="location-label">
                 <strong>{location.name}</strong>
-                <span>{location.count} {t(locale, "itemCount")}</span>
-              </div>
-              <i><b style={{ width: `${(location.count / max) * 100}%`, background: locationColors[index % locationColors.length] }} /></i>
-            </div>
+                <small className={`location-state ${location.active ? "active" : ""}`}>{location.active ? t(locale, "active") : t(locale, "inactive")}</small>
+              </span>
+              <div><i style={{ width: `${(location.count / max) * 100}%`, background: locationColors[index % locationColors.length] }} /></div>
+              <strong>{location.count}</strong>
+            </button>
           ))}
         </div>
       ) : (
         <div className="location-pie-layout">
-          <div
+          <button
             className="location-pie"
+            onClick={() => setView("locations")}
             style={{ background: pieSegments.length ? `conic-gradient(${pieSegments.join(", ")})` : "var(--media-bg)" }}
-            aria-hidden="true"
+            type="button"
+            aria-label={t(locale, "locations")}
           >
             <span>{totalVisible}</span>
             <small>{t(locale, "itemCount")}</small>
-          </div>
+          </button>
           <div className="location-pie-legend">
             {visible.map((location, index) => (
-              <div key={location.id}>
+              <button key={location.id} onClick={() => setView("locations")} type="button">
                 <i style={{ background: locationColors[index % locationColors.length] }} />
                 <span>{location.name}</span>
                 <strong>{location.count}</strong>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       )}
       {hiddenCount > 0 && <p>{hiddenCount} {t(locale, "otherLocations")}</p>}
-      <button className="open-locations-link" onClick={() => setView("locations")} type="button">{t(locale, "openLocations")}</button>
     </article>
   );
 }
@@ -838,12 +837,13 @@ function ActionActivityChart({ actions, locale, advanced = false }: { actions: I
                 <path
                   d={series.path}
                   fill="none"
-                  key={`${series.type}-${range}-${nowTick}`}
+                  key={series.type}
                   pathLength={1}
                   stroke={getActionColor(series.type, actionTypes)}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={advanced ? 2.5 : 2}
+                  strokeWidth={2.35}
+                  vectorEffect="non-scaling-stroke"
                 />
               ))}
             </svg>
