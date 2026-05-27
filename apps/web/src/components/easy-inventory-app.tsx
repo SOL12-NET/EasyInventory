@@ -31,6 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type PointerEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { InventoryCardsView } from "@/components/inventory-cards-view";
 import {
   addLocation,
@@ -559,6 +560,9 @@ function DashboardView({
 
       const target = getStableWidgetTarget(event.clientX, event.clientY, current.id);
       if (!target) {
+        const idle = { ...next, lastTarget: undefined };
+        pointerDragRef.current = idle;
+        setPointerDrag(idle);
         setDragOverWidget(null);
         return;
       }
@@ -603,24 +607,22 @@ function DashboardView({
   }
 
   function animateWidgetLayout(firstRects: Map<DashboardWidgetId, DOMRect>, skipId?: DashboardWidgetId) {
-    window.requestAnimationFrame(() => {
-      const lastRects = getWidgetRects();
-      widgetRefs.current.forEach((node, id) => {
-        if (id === skipId) return;
-        const first = firstRects.get(id);
-        const last = lastRects.get(id);
-        if (!first || !last) return;
-        const deltaX = first.left - last.left;
-        const deltaY = first.top - last.top;
-        if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
-        node.animate(
-          [
-            { transform: `translate(${deltaX}px, ${deltaY}px)` },
-            { transform: "translate(0, 0)" },
-          ],
-          { duration: 260, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
-        );
-      });
+    const lastRects = getWidgetRects();
+    widgetRefs.current.forEach((node, id) => {
+      if (id === skipId) return;
+      const first = firstRects.get(id);
+      const last = lastRects.get(id);
+      if (!first || !last) return;
+      const deltaX = first.left - last.left;
+      const deltaY = first.top - last.top;
+      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+      node.animate(
+        [
+          { transform: `translate3d(${deltaX}px, ${deltaY}px, 0)` },
+          { transform: "translate3d(0, 0, 0)" },
+        ],
+        { duration: 280, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+      );
     });
   }
 
@@ -636,18 +638,13 @@ function DashboardView({
 
   function getFloatingWidgetStyle(drag: DashboardPointerDrag | null, id: DashboardWidgetId): CSSProperties | undefined {
     if (!drag || drag.id !== id || !drag.active) return undefined;
-    const viewportWidth = typeof window === "undefined" ? drag.width : window.innerWidth;
-    const viewportHeight = typeof window === "undefined" ? drag.height : window.innerHeight;
-    const margin = 12;
-    const maxLeft = Math.max(margin, viewportWidth - drag.width - margin);
-    const maxTop = Math.max(margin, viewportHeight - drag.height - margin);
-    const left = Math.min(Math.max(margin, drag.x - drag.offsetX), maxLeft);
-    const top = Math.min(Math.max(margin, drag.y - drag.offsetY), maxTop);
     return {
       height: drag.height,
-      left,
+      left: drag.startX - drag.offsetX,
       position: "fixed",
-      top,
+      top: drag.startY - drag.offsetY,
+      transform: `translate3d(${drag.x - drag.startX}px, ${drag.y - drag.startY}px, 0) rotate(0.35deg) scale(1.01)`,
+      transition: "none",
       width: drag.width,
       zIndex: 50,
     };
@@ -656,12 +653,16 @@ function DashboardView({
   function moveDashboardWidget(source: DashboardWidgetId, target: DashboardWidgetId, options: { clearMove?: boolean; skipAnimationFor?: DashboardWidgetId } = {}) {
     if (source === target) return;
     const firstRects = getWidgetRects();
-    setDashboardLayout((current) => {
-      const order = getMovedWidgetOrder(current.order, source, target);
-      if (order.join("|") === current.order.join("|")) return current;
-      return { ...current, order };
+    let moved = false;
+    flushSync(() => {
+      setDashboardLayout((current) => {
+        const order = getMovedWidgetOrder(current.order, source, target);
+        if (order.join("|") === current.order.join("|")) return current;
+        moved = true;
+        return { ...current, order };
+      });
     });
-    animateWidgetLayout(firstRects, options.skipAnimationFor);
+    if (moved) animateWidgetLayout(firstRects, options.skipAnimationFor);
     if (options.clearMove !== false) setActiveMoveWidget(null);
   }
 
@@ -686,17 +687,21 @@ function DashboardView({
 
   function shiftDashboardWidget(id: DashboardWidgetId, direction: -1 | 1) {
     const firstRects = getWidgetRects();
-    setDashboardLayout((current) => {
-      const visible = current.order.filter((widgetId) => !current.hidden.includes(widgetId));
-      const index = visible.indexOf(id);
-      const target = visible[index + direction];
-      if (!target) return current;
-      const order = current.order.filter((widgetId) => widgetId !== id);
-      const targetIndex = order.indexOf(target);
-      order.splice(direction < 0 ? targetIndex : targetIndex + 1, 0, id);
-      return { ...current, order };
+    let moved = false;
+    flushSync(() => {
+      setDashboardLayout((current) => {
+        const visible = current.order.filter((widgetId) => !current.hidden.includes(widgetId));
+        const index = visible.indexOf(id);
+        const target = visible[index + direction];
+        if (!target) return current;
+        const order = current.order.filter((widgetId) => widgetId !== id);
+        const targetIndex = order.indexOf(target);
+        order.splice(direction < 0 ? targetIndex : targetIndex + 1, 0, id);
+        moved = true;
+        return { ...current, order };
+      });
     });
-    animateWidgetLayout(firstRects);
+    if (moved) animateWidgetLayout(firstRects);
   }
 
   function getStableWidgetTarget(x: number, y: number, ignoreId: DashboardWidgetId) {
@@ -738,8 +743,8 @@ function DashboardView({
       startY: event.clientY,
       x: event.clientX,
       y: event.clientY,
-      offsetX: rect.width / 2,
-      offsetY: rect.height / 2,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
       width: rect.width,
       height: rect.height,
       active: false,
@@ -904,7 +909,7 @@ function DashboardView({
             height: pointerDrag.height,
           } : undefined}
           dragStyle={getFloatingWidgetStyle(pointerDrag, id)}
-          isDragging={draggedWidget === id || pointerDrag?.id === id}
+          isDragging={(draggedWidget === id && pointerDrag?.id !== id) || (pointerDrag?.id === id && pointerDrag.active)}
           isPointerDragging={pointerDrag?.id === id && pointerDrag.active}
           isDragOver={dragOverWidget === id && draggedWidget !== id}
           isMoveSource={activeMoveWidget === id}

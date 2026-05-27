@@ -547,7 +547,7 @@ html[data-theme="dark"] .moon-icon {
 .dashboard-widget-frame.is-pointer-dragging .dashboard-widget-surface {
   pointer-events: none;
   filter: drop-shadow(0 28px 42px rgba(15, 23, 42, 0.2));
-  transform: rotate(0.45deg) scale(1.015);
+  will-change: transform;
 }
 
 .dashboard-widget-frame.is-pointer-dragging .dashboard-widget-surface > .panel,
