@@ -521,6 +521,17 @@ html[data-theme="dark"] .moon-icon {
   box-shadow: 0 22px 48px rgba(20, 184, 166, 0.15);
 }
 
+.dashboard-widget-frame.is-move-source > .panel,
+.dashboard-widget-frame.is-move-source > .insight-card {
+  border-color: rgba(20, 184, 166, 0.9);
+  box-shadow: 0 20px 44px rgba(20, 184, 166, 0.18);
+}
+
+.dashboard-widget-frame.is-move-target > .panel,
+.dashboard-widget-frame.is-move-target > .insight-card {
+  border-color: rgba(96, 165, 250, 0.48);
+}
+
 .dashboard-drag-handle {
   position: absolute;
   z-index: 5;
@@ -538,6 +549,7 @@ html[data-theme="dark"] .moon-icon {
   opacity: 0;
   transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease;
   cursor: grab;
+  touch-action: none;
 }
 
 .dashboard-widget-frame:hover .dashboard-drag-handle,
@@ -590,6 +602,43 @@ html[data-theme="dark"] .moon-icon {
 .dashboard-widget-order-controls button:disabled {
   cursor: not-allowed;
   opacity: 0.42;
+}
+
+.dashboard-move-target {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  border: 1px dashed rgba(20, 184, 166, 0.48);
+  border-radius: 8px;
+  background: rgba(8, 47, 73, 0.08);
+  color: var(--primary-dark);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 160ms ease, background 160ms ease;
+}
+
+.dashboard-widget-frame.is-move-source .dashboard-move-target,
+.dashboard-widget-frame.is-move-target:hover .dashboard-move-target,
+.dashboard-move-target:focus-visible {
+  opacity: 1;
+}
+
+.dashboard-move-target span {
+  border-radius: 999px;
+  background: var(--search-count-bg);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  box-shadow: var(--shadow);
+}
+
+.dashboard-widget-frame.is-move-source .dashboard-move-target {
+  cursor: pointer;
+}
+
+.dashboard-widget-frame.is-move-target .dashboard-move-target {
+  cursor: copy;
 }
 
 .metric-card {

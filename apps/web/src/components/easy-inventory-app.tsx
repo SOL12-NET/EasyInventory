@@ -30,7 +30,7 @@ import {
   Warehouse,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ChangeEvent, type DragEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type DragEvent, type ReactNode } from "react";
 import { InventoryCardsView } from "@/components/inventory-cards-view";
 import {
   addLocation,
@@ -508,6 +508,7 @@ function DashboardView({
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [draggedWidget, setDraggedWidget] = useState<DashboardWidgetId | null>(null);
   const [dragOverWidget, setDragOverWidget] = useState<DashboardWidgetId | null>(null);
+  const [activeMoveWidget, setActiveMoveWidget] = useState<DashboardWidgetId | null>(null);
   const visibleWidgets = dashboardLayout.order.filter((id) => !dashboardLayout.hidden.includes(id));
 
   useEffect(() => {
@@ -527,6 +528,7 @@ function DashboardView({
       order.splice(targetIndex < 0 ? order.length : targetIndex, 0, source);
       return { ...current, order };
     });
+    setActiveMoveWidget(null);
   }
 
   function toggleDashboardWidget(id: DashboardWidgetId) {
@@ -544,6 +546,7 @@ function DashboardView({
     setDashboardLayout(defaultDashboardLayout);
     setDraggedWidget(null);
     setDragOverWidget(null);
+    setActiveMoveWidget(null);
   }
 
   function shiftDashboardWidget(id: DashboardWidgetId, direction: -1 | 1) {
@@ -560,7 +563,7 @@ function DashboardView({
   }
 
   function getWidgetIdFromPoint(x: number, y: number) {
-    const element = document.elementFromPoint(x, y)?.closest("[data-dashboard-widget-id]");
+    const element = document.elementsFromPoint(x, y).find((entry) => entry.hasAttribute("data-dashboard-widget-id") || entry.closest("[data-dashboard-widget-id]"))?.closest("[data-dashboard-widget-id]");
     const id = element?.getAttribute("data-dashboard-widget-id") as DashboardWidgetId | null;
     return id && dashboardWidgetIds.includes(id) ? id : null;
   }
@@ -715,6 +718,8 @@ function DashboardView({
           title={t(locale, dashboardWidgetLabels[id])}
           isDragging={draggedWidget === id}
           isDragOver={dragOverWidget === id && draggedWidget !== id}
+          isMoveSource={activeMoveWidget === id}
+          isMoveTarget={Boolean(activeMoveWidget && activeMoveWidget !== id)}
           onDragStart={(widgetId, event) => {
             setDraggedWidget(widgetId);
             event.dataTransfer.effectAllowed = "move";
@@ -741,19 +746,14 @@ function DashboardView({
           onMoveNext={(widgetId) => shiftDashboardWidget(widgetId, 1)}
           canMovePrevious={visibleWidgets.indexOf(id) > 0}
           canMoveNext={visibleWidgets.indexOf(id) < visibleWidgets.length - 1}
-          onPointerStart={(widgetId, event) => {
-            event.currentTarget.setPointerCapture(event.pointerId);
-            setDraggedWidget(widgetId);
-          }}
-          onPointerMove={(widgetId, event) => {
-            const target = getWidgetIdFromPoint(event.clientX, event.clientY);
-            if (target && target !== widgetId) setDragOverWidget(target);
-          }}
-          onPointerEnd={(widgetId, event) => {
-            const target = getWidgetIdFromPoint(event.clientX, event.clientY);
-            if (target && target !== widgetId) moveDashboardWidget(widgetId, target);
-            setDraggedWidget(null);
-            setDragOverWidget(null);
+          onActivateMove={(widgetId) => setActiveMoveWidget((current) => (current === widgetId ? null : widgetId))}
+          onMoveTarget={(widgetId) => {
+            if (!activeMoveWidget) return;
+            if (activeMoveWidget === widgetId) {
+              setActiveMoveWidget(null);
+              return;
+            }
+            moveDashboardWidget(activeMoveWidget, widgetId);
           }}
         >
           {renderDashboardWidget(id)}
@@ -780,6 +780,8 @@ function DashboardWidgetFrame({
   title,
   isDragging,
   isDragOver,
+  isMoveSource,
+  isMoveTarget,
   onDragStart,
   onDragOver,
   onDrop,
@@ -788,9 +790,8 @@ function DashboardWidgetFrame({
   onMoveNext,
   canMovePrevious,
   canMoveNext,
-  onPointerStart,
-  onPointerMove,
-  onPointerEnd,
+  onActivateMove,
+  onMoveTarget,
   children,
 }: {
   id: DashboardWidgetId;
@@ -799,6 +800,8 @@ function DashboardWidgetFrame({
   title: string;
   isDragging: boolean;
   isDragOver: boolean;
+  isMoveSource: boolean;
+  isMoveTarget: boolean;
   onDragStart: (id: DashboardWidgetId, event: DragEvent<HTMLButtonElement>) => void;
   onDragOver: (id: DashboardWidgetId, event: DragEvent<HTMLDivElement>) => void;
   onDrop: (id: DashboardWidgetId, event: DragEvent<HTMLDivElement>) => void;
@@ -807,14 +810,13 @@ function DashboardWidgetFrame({
   onMoveNext: (id: DashboardWidgetId) => void;
   canMovePrevious: boolean;
   canMoveNext: boolean;
-  onPointerStart: (id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) => void;
-  onPointerMove: (id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) => void;
-  onPointerEnd: (id: DashboardWidgetId, event: PointerEvent<HTMLButtonElement>) => void;
+  onActivateMove: (id: DashboardWidgetId) => void;
+  onMoveTarget: (id: DashboardWidgetId) => void;
   children: ReactNode;
 }) {
   return (
     <div
-      className={`dashboard-widget-frame ${span === 2 ? "span-2" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
+      className={`dashboard-widget-frame ${span === 2 ? "span-2" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""} ${isMoveSource ? "is-move-source" : ""} ${isMoveTarget ? "is-move-target" : ""}`}
       data-dashboard-widget-id={id}
       onDragOver={(event) => onDragOver(id, event)}
       onDrop={(event) => onDrop(id, event)}
@@ -822,13 +824,13 @@ function DashboardWidgetFrame({
       <button
         aria-label={`${t(locale, "moveWidget")} ${title}`}
         className="dashboard-drag-handle"
-        draggable
+        title={t(locale, "moveWidget")}
         onDragStart={(event) => onDragStart(id, event)}
         onDragEnd={onDragEnd}
-        onPointerDown={(event) => onPointerStart(id, event)}
-        onPointerMove={(event) => onPointerMove(id, event)}
-        onPointerUp={(event) => onPointerEnd(id, event)}
-        onPointerCancel={onDragEnd}
+        onClick={(event) => {
+          event.preventDefault();
+          onActivateMove(id);
+        }}
         type="button"
       >
         <GripVertical size={15} />
@@ -841,6 +843,19 @@ function DashboardWidgetFrame({
           <ArrowRight size={14} />
         </button>
       </div>
+      {(isMoveSource || isMoveTarget) && (
+        <button
+          aria-label={isMoveSource ? `${t(locale, "cancelMove")} ${title}` : `${t(locale, "placeWidgetHere")} ${title}`}
+          className="dashboard-move-target"
+          onClick={(event) => {
+            event.preventDefault();
+            onMoveTarget(id);
+          }}
+          type="button"
+        >
+          <span>{isMoveSource ? t(locale, "movingWidget") : t(locale, "placeHere")}</span>
+        </button>
+      )}
       {children}
     </div>
   );
