@@ -3,7 +3,8 @@ import type { Locale } from "./types";
 const dictionaries = {
   fr: {
     appName: "EasyInventory",
-    appTagline: "Inventaire terrain rapide, pilotage SaaS clair.",
+    heroEyebrow: "CONSOLE DE SUPERVISION",
+    appTagline: "Votre inventaire terrain en temps réel, connecté à vos équipes.",
     dashboard: "Tableau de bord",
     inventory: "Inventaire",
     logs: "Logs",
@@ -102,7 +103,8 @@ const dictionaries = {
   },
   en: {
     appName: "EasyInventory",
-    appTagline: "Fast field inventory, clean SaaS oversight.",
+    heroEyebrow: "SUPERVISION CONSOLE",
+    appTagline: "Your field inventory in real-time, connected to your teams.",
     dashboard: "Dashboard",
     inventory: "Inventory",
     logs: "Logs",
@@ -201,7 +203,8 @@ const dictionaries = {
   },
   es: {
     appName: "EasyInventory",
-    appTagline: "Inventario rapido en campo, control SaaS claro.",
+    heroEyebrow: "CONSOLA DE SUPERVISIÓN",
+    appTagline: "Su inventario de campo en tiempo real, conectado con sus equipos.",
     dashboard: "Panel",
     inventory: "Inventario",
     logs: "Logs",

@@ -380,6 +380,9 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
         <section className="hero-band">
           <div>
+            <span className="eyebrow" style={{ fontWeight: 850, fontSize: "0.82rem", letterSpacing: "0.08em" }}>
+              {t(locale, "heroEyebrow")}
+            </span>
             <h2>{t(locale, "appTagline")}</h2>
           </div>
         </section>
