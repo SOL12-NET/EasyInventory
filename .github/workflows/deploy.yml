@@ -87,6 +87,8 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             cd ${{ secrets.SSH_DEPLOY_PATH }}
+            git checkout main
+            git pull
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune -f
