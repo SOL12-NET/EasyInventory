@@ -47,3 +47,15 @@ export async function deactivatePhotoAction(itemId: string, photoId: string, act
 export async function resetDemoAction(): Promise<InventoryState> {
   return serverStore.resetDemo();
 }
+
+export async function createAccountAction(name: string, locationIds: string[], customPassword?: string): Promise<InventoryState> {
+  return serverStore.createAccount(name, locationIds, customPassword);
+}
+
+export async function deleteAccountAction(accountId: string): Promise<InventoryState> {
+  return serverStore.deleteAccount(accountId);
+}
+
+export async function changePasswordAction(accountId: string, newPassword: string): Promise<InventoryState> {
+  return serverStore.changePassword(accountId, newPassword);
+}

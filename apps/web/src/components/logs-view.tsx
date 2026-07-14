@@ -26,14 +26,7 @@ export function LogsView({
 
   return (
     <section className="logs-page">
-      <div className="panel logs-hero">
-        <div>
-          <p className="eyebrow"><Activity size={14} /> {t(locale, "logs")}</p>
-          <h2>{t(locale, "logsTitle")}</h2>
-          <p>{t(locale, "logsIntro")}</p>
-        </div>
-        <strong>{actions.length}</strong>
-      </div>
+
 
       <div className="panel">
         <div className="panel-title"><LineChart size={18} /><h3>{t(locale, "actionActivity")}</h3></div>

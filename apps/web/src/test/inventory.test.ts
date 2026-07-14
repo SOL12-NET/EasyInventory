@@ -15,6 +15,7 @@ import {
   updateLocation,
 } from "@/lib/inventory";
 import { can } from "@/lib/permissions";
+import { generateLogin, generateRandomPassword } from "@/lib/auth-helpers";
 
 describe("inventory domain", () => {
   it("computes dashboard metrics", () => {
@@ -120,5 +121,27 @@ describe("inventory domain", () => {
     expect(can("operator", "manage:photos")).toBe(false);
     expect(can("manager", "manage:photos")).toBe(true);
     expect(can("owner", "reset:demo")).toBe(true);
+  });
+
+  it("generates unique logins based on first name and last name", () => {
+    const existing = ["jdupont", "jedupont"];
+    
+    // First letter + last name
+    expect(generateLogin("Marc Dupont", existing)).toBe("mdupont");
+    
+    // Collides with jdupont -> tries two letters: jedupont -> tries three letters: jeadupont
+    expect(generateLogin("Jean Dupont", existing)).toBe("jeadupont");
+    
+    // Collides with everything -> appends a number
+    const allExisting = ["jdupont", "jedupont", "jeadupont", "jeandupont"];
+    expect(generateLogin("Jean Dupont", allExisting)).toBe("jdupont2");
+  });
+
+  it("generates secure random passwords of 8 characters", () => {
+    const pass1 = generateRandomPassword();
+    const pass2 = generateRandomPassword();
+    expect(pass1).toHaveLength(8);
+    expect(pass2).toHaveLength(8);
+    expect(pass1).not.toBe(pass2);
   });
 });

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { db, hasDbConfig } from "./db";
-import { organizations, locations, items, photos, actions } from "./schema";
+import { organizations, locations, items, photos, actions, accounts } from "./schema";
 import { eq, desc, and } from "drizzle-orm";
 import { demoState } from "./seed";
 import {
@@ -15,16 +15,42 @@ import {
   deactivatePhoto as pureDeactivatePhoto,
 } from "./inventory";
 import type { InventoryState, Item, Location, Photo, InventoryAction, Role } from "./types";
+import { generateLogin, generateRandomPassword } from "./auth-helpers";
 
 const DEMO_ORG_ID = "org-sol12-demo";
-const JSON_DB_PATH = path.join(process.cwd(), "db.json");
+const JSON_DB_PATH = path.join(
+  process.cwd(),
+  process.env.NODE_ENV === "test" ? "db.test.json" : "db.json"
+);
 
 // Helper to load state from JSON file
 function loadJsonState(): InventoryState {
   try {
     if (fs.existsSync(JSON_DB_PATH)) {
       const data = fs.readFileSync(JSON_DB_PATH, "utf-8");
-      return JSON.parse(data) as InventoryState;
+      const state = JSON.parse(data) as InventoryState;
+      if (!state.accounts) {
+        state.accounts = cloneDemoState().accounts;
+        saveJsonState(state);
+      } else {
+        let modified = false;
+        state.accounts = state.accounts.map((acc) => {
+          if (!acc.login || !acc.password) {
+            const seedAcc = cloneDemoState().accounts.find((sa) => sa.id === acc.id);
+            modified = true;
+            return {
+              ...acc,
+              login: acc.login || seedAcc?.login || "user",
+              password: acc.password || seedAcc?.password || "password123",
+            };
+          }
+          return acc;
+        });
+        if (modified) {
+          saveJsonState(state);
+        }
+      }
+      return state;
     }
   } catch (error) {
     console.error("Error reading JSON db:", error);
@@ -107,6 +133,20 @@ async function seedPostgres(orgId: string) {
       at: act.at ? new Date(act.at) : undefined,
     }).onConflictDoNothing();
   }
+
+  // Insert accounts
+  for (const acc of demoState.accounts) {
+    await db.insert(accounts).values({
+      id: acc.id,
+      organizationId: orgId,
+      name: acc.name,
+      role: acc.role,
+      locationIds: acc.locationIds,
+      login: acc.login,
+      password: acc.password,
+      createdAt: acc.createdAt ? new Date(acc.createdAt) : undefined,
+    }).onConflictDoNothing();
+  }
 }
 
 // PostgreSQL State Loader
@@ -138,6 +178,10 @@ async function getPostgresState(orgId: string): Promise<InventoryState> {
 
   const dbActions = await db.query.actions.findMany({
     where: eq(actions.organizationId, orgId),
+  });
+
+  const dbAccounts = await db.query.accounts.findMany({
+    where: eq(accounts.organizationId, orgId),
   });
 
   return {
@@ -187,6 +231,15 @@ async function getPostgresState(orgId: string): Promise<InventoryState> {
       type: a.type,
       actor: a.actor,
       at: a.at.toISOString(),
+    })),
+    accounts: dbAccounts.map((a) => ({
+      id: a.id,
+      name: a.name,
+      role: a.role as any,
+      locationIds: a.locationIds,
+      login: a.login,
+      password: a.password,
+      createdAt: a.createdAt.toISOString(),
     })),
   };
 }
@@ -449,6 +502,7 @@ export const serverStore = {
         await db.delete(photos).where(eq(photos.organizationId, DEMO_ORG_ID));
         await db.delete(items).where(eq(items.organizationId, DEMO_ORG_ID));
         await db.delete(locations).where(eq(locations.organizationId, DEMO_ORG_ID));
+        await db.delete(accounts).where(eq(accounts.organizationId, DEMO_ORG_ID));
         await db.delete(organizations).where(eq(organizations.id, DEMO_ORG_ID));
 
         await seedPostgres(DEMO_ORG_ID);
@@ -459,6 +513,90 @@ export const serverStore = {
     }
 
     const next = cloneDemoState();
+    saveJsonState(next);
+    return next;
+  },
+
+  async createAccount(name: string, locationIds: string[], customPassword?: string): Promise<InventoryState> {
+    if (hasDbConfig && db) {
+      try {
+        const accs = await db.query.accounts.findMany({
+          where: eq(accounts.organizationId, DEMO_ORG_ID),
+        });
+        const existingLogins = accs.map((a) => a.login);
+        const login = generateLogin(name, existingLogins);
+        const password = customPassword || generateRandomPassword();
+        const accId = crypto.randomUUID();
+        await db.insert(accounts).values({
+          id: accId,
+          organizationId: DEMO_ORG_ID,
+          name,
+          role: "operator",
+          locationIds,
+          login,
+          password,
+        });
+        return await getPostgresState(DEMO_ORG_ID);
+      } catch (error) {
+        console.error("Postgres createAccount failed:", error);
+      }
+    }
+
+    const state = loadJsonState();
+    const existingLogins = state.accounts.map((a) => a.login);
+    const login = generateLogin(name, existingLogins);
+    const password = customPassword || generateRandomPassword();
+    const at = new Date().toISOString();
+    const nextAccounts = [
+      ...state.accounts,
+      {
+        id: crypto.randomUUID(),
+        name,
+        role: "operator" as const,
+        locationIds,
+        login,
+        password,
+        createdAt: at,
+      },
+    ];
+    const next = { ...state, accounts: nextAccounts };
+    saveJsonState(next);
+    return next;
+  },
+
+  async deleteAccount(accountId: string): Promise<InventoryState> {
+    if (hasDbConfig && db) {
+      try {
+        await db.delete(accounts).where(eq(accounts.id, accountId));
+        return await getPostgresState(DEMO_ORG_ID);
+      } catch (error) {
+        console.error("Postgres deleteAccount failed:", error);
+      }
+    }
+
+    const state = loadJsonState();
+    const next = { ...state, accounts: state.accounts.filter((a) => a.id !== accountId) };
+    saveJsonState(next);
+    return next;
+  },
+
+  async changePassword(accountId: string, newPassword: string): Promise<InventoryState> {
+    if (hasDbConfig && db) {
+      try {
+        await db.update(accounts)
+          .set({ password: newPassword })
+          .where(eq(accounts.id, accountId));
+        return await getPostgresState(DEMO_ORG_ID);
+      } catch (error) {
+        console.error("Postgres changePassword failed:", error);
+      }
+    }
+
+    const state = loadJsonState();
+    const next = {
+      ...state,
+      accounts: state.accounts.map((a) => (a.id === accountId ? { ...a, password: newPassword } : a)),
+    };
     saveJsonState(next);
     return next;
   },

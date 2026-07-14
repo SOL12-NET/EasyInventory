@@ -59,12 +59,23 @@ export type Organization = {
   plan: "demo" | "pro";
 };
 
+export type Account = {
+  id: string;
+  name: string;
+  role: Role;
+  locationIds: string[];
+  login: string;
+  password: string;
+  createdAt: string;
+};
+
 export type InventoryState = {
   organization: Organization;
   locations: Location[];
   items: Item[];
   photos: Photo[];
   actions: InventoryAction[];
+  accounts: Account[];
 };
 
 export type InventorySummary = {

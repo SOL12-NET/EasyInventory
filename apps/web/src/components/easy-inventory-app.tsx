@@ -15,18 +15,21 @@ import {
   Sun,
   Warehouse,
   X,
+  Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { InventoryCardsView } from "@/components/inventory-cards-view";
 import { DashboardView, type View } from "@/components/dashboard-view";
 import { LogsView } from "@/components/logs-view";
 import { DocumentationView } from "@/components/documentation-view";
-import { SettingsView } from "@/components/settings-view";
+
 import { LocationsView } from "@/components/locations-view";
+import { AccountsView } from "@/components/accounts-view";
+import { OperatorView } from "@/components/operator-view";
 import { cloneDemoState, summarizeInventory } from "@/lib/inventory";
 import { t } from "@/lib/i18n";
 import { roleLabel, can } from "@/lib/permissions";
-import { type InventoryState, type Item, type Locale, type Role, type Location } from "@/lib/types";
+import { type InventoryState, type Item, type Locale, type Role, type Location, type Account } from "@/lib/types";
 import {
   getInventoryStateAction,
   updateItemAction,
@@ -37,12 +40,17 @@ import {
   setFrontPhotoAction,
   deactivatePhotoAction,
   resetDemoAction,
+  createAccountAction,
+  deleteAccountAction,
+  changePasswordAction,
 } from "@/app/actions";
 
 const themeStorageKey = "easyinventory.saas.theme";
 const roleStorageKey = "easyinventory.saas.demo-role";
 const sidebarWidthStorageKey = "easyinventory.saas.sidebar-width";
 const sidebarCollapsedStorageKey = "easyinventory.saas.sidebar-collapsed";
+const activeAccountStorageKey = "easyinventory.saas.active-account-id";
+const activeLocationStorageKey = "easyinventory.saas.operator-active-location";
 
 export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: string }) {
   const [state, setState] = useState<InventoryState>(() => cloneDemoState());
@@ -58,19 +66,40 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   const [navOpen, setNavOpen] = useState(false);
   const [storageError, setStorageError] = useState(false);
 
+  // Operator session active states
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  const [activeLocationId, setActiveLocationId] = useState<string>("");
+  const [userSwitcherOpen, setUserSwitcherOpen] = useState(false);
+  const [authLogin, setAuthLogin] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState(false);
+
   // Sidebar sizing & collapse state
   const [sidebarWidth, setSidebarWidth] = useState(286);
   const [collapsed, setCollapsed] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
 
+  // Resolve current active account details
+  const activeAccount = useMemo(() => {
+    const defaultAcc = state.accounts?.find(a => a.role === "manager") || state.accounts?.[0];
+    return state.accounts?.find((a) => a.id === activeAccountId) ?? defaultAcc ?? {
+      id: "acc-manager",
+      name: "Manager Général",
+      role: "manager" as Role,
+      locationIds: [],
+    };
+  }, [state.accounts, activeAccountId]);
+
   // Initialize and load state from server
   useEffect(() => {
     let active = true;
     async function init() {
+      let loadedState = state;
       try {
         const serverState = await getInventoryStateAction();
         if (active) {
           setState(serverState);
+          loadedState = serverState;
         }
       } catch (err) {
         console.error("Failed to load server state:", err);
@@ -78,15 +107,38 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
       try {
         const savedTheme = window.localStorage.getItem(themeStorageKey);
-        const savedRole = window.localStorage.getItem(roleStorageKey);
         const savedWidth = window.localStorage.getItem(sidebarWidthStorageKey);
         const savedCollapsed = window.localStorage.getItem(sidebarCollapsedStorageKey);
+        const savedAccountId = window.localStorage.getItem(activeAccountStorageKey);
+        const savedLocationId = window.localStorage.getItem(activeLocationStorageKey);
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
         if (active) {
           setTheme(savedTheme === "dark" || (!savedTheme && prefersDark) ? "dark" : "light");
-          if (isRole(savedRole)) setRole(savedRole);
           if (savedWidth) setSidebarWidth(parseInt(savedWidth, 10));
           if (savedCollapsed) setCollapsed(savedCollapsed === "true");
+
+          // Resolve active account from loaded state or default to manager
+          const accountsList = loadedState.accounts || [];
+          const matchedAcc = accountsList.find((a) => a.id === savedAccountId) || accountsList.find((a) => a.role === "manager") || accountsList[0] || null;
+          
+          if (matchedAcc) {
+            setActiveAccountId(matchedAcc.id);
+            setRole(matchedAcc.role);
+            
+            // Set operator view as default if they log in as operator
+            if (matchedAcc.role === "operator") {
+              setView("inventory");
+            }
+
+            // Resolve location for operator
+            const allowedLocIds = matchedAcc.locationIds || [];
+            const activeLoc = loadedState.locations.find((l) => l.active && (allowedLocIds.length === 0 || allowedLocIds.includes(l.id)));
+            const matchedLocId = allowedLocIds.includes(savedLocationId || "") ? savedLocationId : activeLoc?.id;
+            if (matchedLocId) {
+              setActiveLocationId(matchedLocId);
+            }
+          }
         }
       } catch {
         if (active) setStorageError(true);
@@ -101,17 +153,23 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     };
   }, []);
 
-  // Save theme and role in localStorage
+  // Save theme, role, and active account in localStorage
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     if (!ready) return;
     try {
       window.localStorage.setItem(themeStorageKey, theme);
       window.localStorage.setItem(roleStorageKey, role);
+      if (activeAccountId) {
+        window.localStorage.setItem(activeAccountStorageKey, activeAccountId);
+      }
+      if (activeLocationId) {
+        window.localStorage.setItem(activeLocationStorageKey, activeLocationId);
+      }
     } catch {
       setStorageError(true);
     }
-  }, [ready, role, theme]);
+  }, [ready, role, theme, activeAccountId, activeLocationId]);
 
   // Save sidebar configuration in localStorage
   useEffect(() => {
@@ -137,6 +195,14 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    if (userSwitcherOpen) {
+      setAuthLogin("");
+      setAuthPassword("");
+      setAuthError(false);
+    }
+  }, [userSwitcherOpen]);
 
   function startResizing(event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault();
@@ -164,14 +230,33 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   const selectedItem = state.items.find((item) => item.id === selectedId) ?? state.items[0] ?? null;
   const summary = useMemo(() => summarizeInventory(state, dashboardLocationFilter), [state, dashboardLocationFilter]);
 
-  async function setItemPatch(patch: Partial<Item>, action = "EDIT_ITEM") {
-    if (!selectedItem) return;
+  async function handleUpdateItem(id: string, patch: Partial<Item>, action = "EDIT_ITEM") {
     try {
-      const nextState = await updateItemAction(selectedItem.id, patch, action, role);
+      const nextState = await updateItemAction(id, patch, action, role);
       setState(nextState);
     } catch {
       setStorageError(true);
     }
+  }
+
+  async function setItemPatch(patch: Partial<Item>, action = "EDIT_ITEM") {
+    const targetId = selectedId || selectedItem?.id;
+    if (!targetId) return;
+    await handleUpdateItem(targetId, patch, action);
+  }
+
+  async function handleAccountPasswordChange(accountId: string, newPassword: string) {
+    try {
+      const nextState = await changePasswordAction(accountId, newPassword);
+      setState(nextState);
+    } catch {
+      setStorageError(true);
+    }
+  }
+
+  async function handlePasswordChange(newPassword: string) {
+    if (!activeAccountId) return;
+    await handleAccountPasswordChange(activeAccountId, newPassword);
   }
 
   async function handleNewItem() {
@@ -188,9 +273,22 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     }
   }
 
-  async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    if (!files.length || !selectedItem || !can(role, "add:photos")) return;
+  async function handleCreateItemForLocation(locationId: string): Promise<string | undefined> {
+    try {
+      const nextState = await createItemAction(locationId, role);
+      setState(nextState);
+      setSelectedId(nextState.items[0]?.id ?? selectedId);
+      setInventoryResetSignal((value) => value + 1);
+      return nextState.items[0]?.id;
+    } catch {
+      setStorageError(true);
+    }
+  }
+
+  async function uploadPhotosForItem(itemId: string, filesList: FileList | File[]) {
+    const files = Array.from(filesList);
+    const itemToUpdate = state.items.find((item) => item.id === itemId);
+    if (!files.length || !itemToUpdate || !can(role, "add:photos")) return;
     try {
       const photoPayloads = await Promise.all(
         files.map((file) =>
@@ -199,14 +297,19 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             reader.onload = () => resolve({ url: String(reader.result), originalName: file.name });
             reader.onerror = () => reject(reader.error);
             reader.readAsDataURL(file);
-          }),
-        ),
+          })
+        )
       );
-      const nextState = await addPhotosToItemAction(selectedItem.id, photoPayloads, role);
+      const nextState = await addPhotosToItemAction(itemId, photoPayloads, role);
       setState(nextState);
     } catch {
       setStorageError(true);
     }
+  }
+
+  async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
+    if (!selectedItem) return;
+    await uploadPhotosForItem(selectedItem.id, event.target.files ?? []);
     event.target.value = "";
   }
 
@@ -246,6 +349,50 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     }
   }
 
+  async function handleCreateAccount(name: string, locationIds: string[], customPassword?: string) {
+    try {
+      const nextState = await createAccountAction(name, locationIds, customPassword);
+      setState(nextState);
+    } catch {
+      setStorageError(true);
+    }
+  }
+
+  async function handleDeleteAccount(accountId: string) {
+    try {
+      const nextState = await deleteAccountAction(accountId);
+      setState(nextState);
+      if (activeAccountId === accountId) {
+        const defaultAcc = nextState.accounts.find(a => a.role === "manager") || nextState.accounts[0];
+        if (defaultAcc) {
+          setActiveAccountId(defaultAcc.id);
+          setRole(defaultAcc.role);
+        }
+      }
+    } catch {
+      setStorageError(true);
+    }
+  }
+
+  function handleSwitchActiveAccount(accountId: string) {
+    const matchedAcc = state.accounts?.find(a => a.id === accountId);
+    if (matchedAcc) {
+      setActiveAccountId(matchedAcc.id);
+      setRole(matchedAcc.role);
+      
+      if (matchedAcc.role === "operator") {
+        const allowedLocs = matchedAcc.locationIds;
+        const defaultLocId = allowedLocs[0] || state.locations.find(l => l.active)?.id || "";
+        setActiveLocationId(defaultLocId);
+        setView("inventory");
+      } else {
+        setActiveLocationId("");
+        setView("dashboard");
+      }
+    }
+    setUserSwitcherOpen(false);
+  }
+
   async function resetDemo() {
     try {
       const nextState = await resetDemoAction();
@@ -253,6 +400,22 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
       setSelectedId(nextState.items[0]?.id ?? "");
       setDashboardLocationFilter("all");
       setInventoryResetSignal((value) => value + 1);
+      
+      const defaultAcc = nextState.accounts.find(a => a.role === "manager") || nextState.accounts[0];
+      if (defaultAcc) {
+        setActiveAccountId(defaultAcc.id);
+        setRole(defaultAcc.role);
+        
+        if (defaultAcc.role === "operator") {
+          const allowedLocs = defaultAcc.locationIds;
+          const defaultLocId = allowedLocs[0] || nextState.locations.find(l => l.active)?.id || "";
+          setActiveLocationId(defaultLocId);
+          setView("inventory");
+        } else {
+          setActiveLocationId("");
+          setView("dashboard");
+        }
+      }
     } catch {
       setStorageError(true);
     }
@@ -280,6 +443,41 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         <Sparkles size={26} />
         <strong>{t(locale, "loadingDemo")}</strong>
       </main>
+    );
+  }
+
+  // Auto-switch layout if active account is operator
+  if (activeAccount.role === "operator") {
+    return (
+      <div className={`app-shell-operator theme-${theme}`} data-theme={theme}>
+        <OperatorView
+          locale={locale}
+          state={state}
+          activeAccount={activeAccount}
+          activeLocationId={activeLocationId}
+          setActiveLocationId={setActiveLocationId}
+          onSwitchUser={() => setUserSwitcherOpen(true)}
+          onResetDemo={resetDemo}
+          onUpdateItem={handleUpdateItem}
+          onCreateItem={handleCreateItemForLocation}
+          onUploadPhotos={uploadPhotosForItem}
+          onChangePassword={handlePasswordChange}
+        />
+
+        {userSwitcherOpen && (
+          <LoginModal
+            locale={locale}
+            accounts={state.accounts || []}
+            onClose={() => setUserSwitcherOpen(false)}
+            stateLocations={state.locations}
+            setActiveAccountId={setActiveAccountId}
+            setRole={setRole}
+            setActiveLocationId={setActiveLocationId}
+            setView={setView}
+            setUserSwitcherOpen={setUserSwitcherOpen}
+          />
+        )}
+      </div>
     );
   }
 
@@ -313,14 +511,20 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           {navButton("logs", t(locale, "logs"), <ActivityIcon size={18} />)}
           {navButton("documentation", t(locale, "documentation"), <BookOpen size={18} />)}
           {navButton("locations", t(locale, "locations"), <MapPin size={18} />)}
-          {navButton("settings", t(locale, "settings"), <ShieldCheck size={18} />)}
+          {navButton("accounts", t(locale, "accounts"), <Users size={18} />)}
+
         </nav>
 
-        <div className="sidebar-card">
+        <div
+          className="sidebar-card"
+          onClick={() => setUserSwitcherOpen(true)}
+          style={{ cursor: "pointer" }}
+          title={t(locale, "changeUser")}
+        >
           <LockKeyhole size={18} />
           <div>
-            <strong>{roleLabel(role)}</strong>
-            <span>{t(locale, "demoMode")}</span>
+            <strong>{activeAccount.name}</strong>
+            <span>{roleLabel(activeAccount.role)}</span>
           </div>
         </div>
       </aside>
@@ -333,7 +537,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         onPointerCancel={stopResizing}
       />
 
-      <section className="workspace">
+      <section className="workspace" style={{ alignContent: "start" }}>
         <header className="topbar">
           <button className="icon-button mobile-only" onClick={() => setNavOpen(!navOpen)} type="button" aria-label="Menu">
             {navOpen ? <X size={20} /> : <Menu size={20} />}
@@ -371,21 +575,25 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
                 <span className="theme-toggle-thumb" />
               </span>
             </button>
-            <button className="primary-button" onClick={handleNewItem} type="button">
-              <PackagePlus size={18} />
-              {t(locale, "newItem")}
-            </button>
+            {(view === "dashboard" || view === "inventory") && (
+              <button className="primary-button" onClick={handleNewItem} type="button">
+                <PackagePlus size={18} />
+                {t(locale, "newItem")}
+              </button>
+            )}
           </div>
         </header>
 
-        <section className="hero-band">
-          <div>
-            <span className="eyebrow" style={{ fontWeight: 850, fontSize: "0.82rem", letterSpacing: "0.08em" }}>
-              {t(locale, "heroEyebrow")}
-            </span>
-            <h2>{t(locale, "appTagline")}</h2>
-          </div>
-        </section>
+        {view === "dashboard" && (
+          <section className="hero-band">
+            <div>
+              <span className="eyebrow" style={{ fontWeight: 850, fontSize: "0.82rem", letterSpacing: "0.08em" }}>
+                {t(locale, "heroEyebrow")}
+              </span>
+              <h2>{t(locale, "appTagline")}</h2>
+            </div>
+          </section>
+        )}
 
         {storageError && <p className="alert-note">{t(locale, "localStorageError")}</p>}
 
@@ -438,15 +646,33 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           />
         )}
 
-        {view === "settings" && (
-          <SettingsView
+        {view === "accounts" && (
+          <AccountsView
             locale={locale}
             role={role}
-            setRole={setRole}
-            resetDemo={resetDemo}
+            state={state}
+            onCreateAccount={handleCreateAccount}
+            onDeleteAccount={handleDeleteAccount}
+            onChangePassword={handleAccountPasswordChange}
           />
         )}
+
+
       </section>
+
+      {userSwitcherOpen && (
+        <LoginModal
+          locale={locale}
+          accounts={state.accounts || []}
+          onClose={() => setUserSwitcherOpen(false)}
+          stateLocations={state.locations}
+          setActiveAccountId={setActiveAccountId}
+          setRole={setRole}
+          setActiveLocationId={setActiveLocationId}
+          setView={setView}
+          setUserSwitcherOpen={setUserSwitcherOpen}
+        />
+      )}
     </main>
   );
 }
@@ -472,7 +698,7 @@ function ActivityIcon({ size }: { size: number }) {
 }
 
 function isView(value: string): value is View {
-  return value === "dashboard" || value === "inventory" || value === "logs" || value === "documentation" || value === "locations" || value === "settings";
+  return value === "dashboard" || value === "inventory" || value === "logs" || value === "documentation" || value === "locations" || value === "accounts";
 }
 
 function isRole(value: string | null): value is Role {
@@ -486,6 +712,149 @@ function viewTitle(locale: Locale, view: View) {
     logs: t(locale, "logs"),
     documentation: t(locale, "documentation"),
     locations: t(locale, "locations"),
-    settings: t(locale, "settings"),
+    accounts: t(locale, "accounts"),
   }[view];
+}
+
+function LoginModal({
+  locale,
+  accounts,
+  onClose,
+  stateLocations,
+  setActiveAccountId,
+  setRole,
+  setActiveLocationId,
+  setView,
+  setUserSwitcherOpen,
+}: {
+  locale: Locale;
+  accounts: Account[];
+  onClose: () => void;
+  stateLocations: Location[];
+  setActiveAccountId: (id: string | null) => void;
+  setRole: (role: Role) => void;
+  setActiveLocationId: (id: string) => void;
+  setView: (view: View) => void;
+  setUserSwitcherOpen: (open: boolean) => void;
+}) {
+  const [loginVal, setLoginVal] = useState("");
+  const [passwordVal, setPasswordVal] = useState("");
+  const [errorMsg, setErrorMsg] = useState(false);
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const matchedAcc = accounts?.find(
+      (a) => a.login.toLowerCase() === loginVal.trim().toLowerCase() && a.password === passwordVal
+    );
+    if (matchedAcc) {
+      setActiveAccountId(matchedAcc.id);
+      setRole(matchedAcc.role);
+      setErrorMsg(false);
+      setUserSwitcherOpen(false);
+      
+      if (matchedAcc.role === "operator") {
+        const allowedLocs = matchedAcc.locationIds;
+        const defaultLocId = allowedLocs[0] || stateLocations.find(l => l.active)?.id || "";
+        setActiveLocationId(defaultLocId);
+        setView("inventory");
+      } else {
+        setActiveLocationId("");
+        setView("dashboard");
+      }
+    } else {
+      setErrorMsg(true);
+    }
+  }
+
+  return (
+    <div className="user-switcher-modal-backdrop" onClick={onClose}>
+      <form className="user-switcher-modal-content" onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
+        <h3>{t(locale, "changeUser")}</h3>
+        
+        {errorMsg && (
+          <p className="alert-note error" style={{ color: "var(--danger)", background: "rgba(239, 68, 68, 0.1)", padding: "10px", borderRadius: "6px", fontSize: "0.9rem", marginBottom: "14px" }}>
+            {t(locale, "loginError")}
+          </p>
+        )}
+
+        <label style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+          <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>{t(locale, "loginLabel")}</span>
+          <input
+            type="text"
+            value={loginVal}
+            onChange={(e) => setLoginVal(e.target.value)}
+            placeholder="Ex: jdupont"
+            required
+            style={{
+              height: "44px",
+              padding: "0 12px",
+              border: "1px solid var(--line)",
+              borderRadius: "6px",
+              background: "var(--field)",
+              color: "var(--ink)",
+            }}
+          />
+        </label>
+
+        <label style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
+          <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>{t(locale, "passwordLabel")}</span>
+          <input
+            type="password"
+            value={passwordVal}
+            onChange={(e) => setPasswordVal(e.target.value)}
+            placeholder="••••••••"
+            required
+            style={{
+              height: "44px",
+              padding: "0 12px",
+              border: "1px solid var(--line)",
+              borderRadius: "6px",
+              background: "var(--field)",
+              color: "var(--ink)",
+            }}
+          />
+        </label>
+
+        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+          <button
+            className="secondary-button"
+            onClick={onClose}
+            type="button"
+            style={{ flex: 1, height: "44px" }}
+          >
+            {t(locale, "cancel")}
+          </button>
+          <button
+            className="primary-button"
+            type="submit"
+            style={{ flex: 1, height: "44px" }}
+          >
+            Se connecter
+          </button>
+        </div>
+
+        {/* Demo Accounts Help Block */}
+        <div className="login-demo-accounts-help" style={{
+          borderTop: "1px dashed var(--line)",
+          paddingTop: "12px",
+          maxHeight: "180px",
+          overflowY: "auto",
+          fontSize: "0.82rem",
+          color: "var(--muted)"
+        }}>
+          <span style={{ fontWeight: 700, display: "block", marginBottom: "6px" }}>
+            {t(locale, "loginHelpTitle")}
+          </span>
+          <ul style={{ paddingLeft: "16px", margin: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
+            {accounts?.map((acc) => (
+              <li key={acc.id}>
+                <strong>{acc.name}</strong> ({roleLabel(acc.role)})<br />
+                <span>Login: <code>{acc.login}</code> / Pass: <code>{acc.password}</code></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </form>
+    </div>
+  );
 }

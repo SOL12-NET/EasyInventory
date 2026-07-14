@@ -91,4 +91,30 @@ describe("serverStore persistence layer", () => {
     item = state.items.find((i) => i.id === "item-1003");
     expect(item?.frontPhotoId).toBeNull();
   });
+
+  it("manages operator accounts correctly", async () => {
+    const original = await serverStore.getState();
+    expect(original.accounts).toBeDefined();
+    // Default seed has 3 accounts
+    expect(original.accounts.length).toBe(3);
+
+    // Create a new operator account
+    const state = await serverStore.createAccount("New Operator", ["loc-annecy"]);
+    expect(state.accounts.length).toBe(4);
+    const created = state.accounts.find((a) => a.name === "New Operator");
+    expect(created?.role).toBe("operator");
+    expect(created?.locationIds).toEqual(["loc-annecy"]);
+    expect(created?.login).toBe("noperator");
+    expect(created?.password).toHaveLength(8);
+
+    // Change password
+    const stateAfterChange = await serverStore.changePassword(created!.id, "secret99");
+    const updated = stateAfterChange.accounts.find((a) => a.id === created!.id);
+    expect(updated?.password).toBe("secret99");
+
+    // Delete the operator account
+    const finalState = await serverStore.deleteAccount(created!.id);
+    expect(finalState.accounts.length).toBe(3);
+    expect(finalState.accounts.find((a) => a.id === created!.id)).toBeUndefined();
+  });
 });

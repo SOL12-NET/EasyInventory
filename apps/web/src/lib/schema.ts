@@ -82,3 +82,18 @@ export const actions = pgTable(
   },
   (table) => [index("actions_org_item_idx").on(table.organizationId, table.itemId)],
 );
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+    name: text("name").notNull(),
+    role: role("role").notNull().default("operator"),
+    locationIds: text("location_ids").array().notNull().default([]),
+    login: text("login").notNull(),
+    password: text("password").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("accounts_org_idx").on(table.organizationId)],
+);

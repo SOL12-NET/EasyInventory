@@ -25,7 +25,7 @@ import { actionLabel, statusLabels, t } from "@/lib/i18n";
 import { statuses, type InventoryAction, type InventoryState, type ItemStatus, type Locale, type Location, type Item } from "@/lib/types";
 import { summarizeInventory } from "@/lib/inventory";
 
-export type View = "dashboard" | "inventory" | "logs" | "documentation" | "locations" | "settings";
+export type View = "dashboard" | "inventory" | "logs" | "documentation" | "locations" | "accounts";
 type StatusChartMode = "lines" | "pie";
 type LocationChartMode = "bars" | "pie";
 type ActionRange = "24h" | "7d" | "30d";
