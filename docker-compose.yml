@@ -2,6 +2,7 @@ services:
   web:
     build:
       context: ./apps/web
+    image: ghcr.io/sol12-net/easyinventory:latest
     env_file:
       - ./apps/web/.env
     ports:

@@ -232,18 +232,6 @@ export function OperatorView({
 
           {dropdownOpen && (
             <div className="operator-dropdown-menu">
-              <button
-                className="operator-dropdown-item"
-                onClick={() => {
-                  setOperatorViewMode(operatorViewMode === "dashboard" ? "inventory" : "dashboard");
-                  setDropdownOpen(false);
-                }}
-                type="button"
-              >
-                <LayoutDashboard size={16} />
-                <span>{operatorViewMode === "dashboard" ? t(locale, "inventory") : t(locale, "dashboard")}</span>
-              </button>
-
               {allowedLocations.length > 1 && (
                 <button
                   className="operator-dropdown-item"
@@ -285,15 +273,13 @@ export function OperatorView({
               <button
                 className="operator-dropdown-item"
                 onClick={() => {
-                  if (confirm(t(locale, "resetDemo"))) {
-                    onResetDemo();
-                  }
+                  setOperatorViewMode(operatorViewMode === "dashboard" ? "inventory" : "dashboard");
                   setDropdownOpen(false);
                 }}
                 type="button"
               >
-                <RotateCcw size={16} />
-                <span>{t(locale, "resetDemo")}</span>
+                <LayoutDashboard size={16} />
+                <span>{operatorViewMode === "dashboard" ? t(locale, "inventory") : t(locale, "dashboard")}</span>
               </button>
             </div>
           )}
@@ -303,10 +289,6 @@ export function OperatorView({
       {operatorViewMode === "dashboard" ? (
         /* Operator Dashboard View */
         <main className="operator-dashboard-container">
-          <div className="operator-card dashboard-hero" style={{ padding: "12px 16px" }}>
-            <h2 style={{ fontSize: "1.2rem", margin: "0" }}>{activeLocation?.name}</h2>
-          </div>
-
           <button
             className="primary-button wide"
             onClick={() => setOperatorViewMode("inventory")}
@@ -472,10 +454,6 @@ export function OperatorView({
                             <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "var(--primary)" }}>#{item.tag}</span>
                             <span style={{ fontSize: "1rem", fontWeight: "600" }}>{item.name}</span>
                           </div>
-                          <span style={{ fontSize: "0.8rem", color: "var(--muted)", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <MapPin size={12} />
-                            {state.locations.find((l) => l.id === item.locationId)?.name ?? item.locationId}
-                          </span>
                         </div>
                         <span style={{
                           fontSize: "0.75rem",
