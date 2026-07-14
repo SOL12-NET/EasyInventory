@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - CTLQ
   schedule:
     # Trigger automatically every Sunday at 1:00 AM UTC (approx. 2:00 AM/3:00 AM French time)
     - cron: '0 1 * * 0'
