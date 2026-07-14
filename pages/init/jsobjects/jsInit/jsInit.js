@@ -12,7 +12,7 @@ export default {
 		},
 		prod: {
 			email: 'jwt@itemgr.manymakers.fr',
-			password: '>Ç¶ÒÍ`Pïe+Ò)ë@:x±N5Q9¥÷à¬)D!gÓ',
+			password: appsmith.store.BASEROW_PASSWORD || '',
 		},
 	},
 	SEARCH_OPTIONS : {
@@ -75,7 +75,14 @@ export default {
 	},
 
 	getAuthPayload() {
-		return this.isLocalRuntime() ? this.BASEROW_AUTH.local : this.BASEROW_AUTH.prod;
+		const isLocal = this.isLocalRuntime();
+		const payload = isLocal ? this.BASEROW_AUTH.local : this.BASEROW_AUTH.prod;
+		if (!isLocal && !payload.password) {
+			const errorMsg = "BASEROW_PASSWORD is not set in appsmith.store. Please run storeValue('BASEROW_PASSWORD', 'your_prod_password') in Appsmith.";
+			console.error(errorMsg);
+			showAlert(errorMsg, "error");
+		}
+		return payload;
 	},
 
 	getBaserowURL() {

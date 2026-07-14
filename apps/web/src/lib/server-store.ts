@@ -14,7 +14,7 @@ import {
   setFrontPhoto as pureSetFrontPhoto,
   deactivatePhoto as pureDeactivatePhoto,
 } from "./inventory";
-import type { InventoryState, Item, Location, Photo, InventoryAction, Role } from "./types";
+import type { InventoryState, Item, Location, Photo, InventoryAction, Role, Account } from "./types";
 import { generateLogin, generateRandomPassword } from "./auth-helpers";
 
 const DEMO_ORG_ID = "org-sol12-demo";
@@ -599,5 +599,41 @@ export const serverStore = {
     };
     saveJsonState(next);
     return next;
+  },
+
+  async verifyCredentials(login: string, passwordVal: string): Promise<Account | null> {
+    if (hasDbConfig && db) {
+      try {
+        const account = await db.query.accounts.findFirst({
+          where: eq(accounts.login, login),
+        });
+        if (account && account.password === passwordVal) {
+          return {
+            id: account.id,
+            name: account.name,
+            role: account.role as any,
+            locationIds: account.locationIds,
+            login: account.login,
+            password: "",
+            createdAt: account.createdAt.toISOString(),
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error("Postgres verifyCredentials failed:", error);
+      }
+    }
+
+    const state = loadJsonState();
+    const account = state.accounts.find(
+      (a) => a.login.toLowerCase() === login.toLowerCase() && a.password === passwordVal
+    );
+    if (account) {
+      return {
+        ...account,
+        password: "",
+      };
+    }
+    return null;
   },
 };

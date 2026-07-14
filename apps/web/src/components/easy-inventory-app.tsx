@@ -32,6 +32,7 @@ import { roleLabel, can } from "@/lib/permissions";
 import { type InventoryState, type Item, type Locale, type Role, type Location, type Account } from "@/lib/types";
 import {
   getInventoryStateAction,
+  verifyCredentialsAction,
   updateItemAction,
   createItemAction,
   updateLocationAction,
@@ -57,7 +58,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   const [ready, setReady] = useState(false);
   const [locale, setLocale] = useState<Locale>("fr");
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [role, setRole] = useState<Role>("manager");
   const [view, setView] = useState<View>(isView(initialView) ? initialView : "dashboard");
   const [dashboardLocationFilter, setDashboardLocationFilter] = useState("all");
   const [statusChartMode, setStatusChartMode] = useState<"lines" | "pie">("lines");
@@ -124,7 +124,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           
           if (matchedAcc) {
             setActiveAccountId(matchedAcc.id);
-            setRole(matchedAcc.role);
             
             // Set operator view as default if they log in as operator
             if (matchedAcc.role === "operator") {
@@ -153,13 +152,12 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     };
   }, []);
 
-  // Save theme, role, and active account in localStorage
+  // Save theme and active account in localStorage
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     if (!ready) return;
     try {
       window.localStorage.setItem(themeStorageKey, theme);
-      window.localStorage.setItem(roleStorageKey, role);
       if (activeAccountId) {
         window.localStorage.setItem(activeAccountStorageKey, activeAccountId);
       }
@@ -169,7 +167,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     } catch {
       setStorageError(true);
     }
-  }, [ready, role, theme, activeAccountId, activeLocationId]);
+  }, [ready, theme, activeAccountId, activeLocationId]);
 
   // Save sidebar configuration in localStorage
   useEffect(() => {
@@ -232,7 +230,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleUpdateItem(id: string, patch: Partial<Item>, action = "EDIT_ITEM") {
     try {
-      const nextState = await updateItemAction(id, patch, action, role);
+      const nextState = await updateItemAction(id, patch, action, activeAccountId || "");
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -247,7 +245,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleAccountPasswordChange(accountId: string, newPassword: string) {
     try {
-      const nextState = await changePasswordAction(accountId, newPassword);
+      const nextState = await changePasswordAction(activeAccountId || "", accountId, newPassword);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -263,7 +261,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     const locationId = state.locations.find((location) => location.active)?.id;
     if (!locationId) return;
     try {
-      const nextState = await createItemAction(locationId, role);
+      const nextState = await createItemAction(locationId, activeAccountId || "");
       setState(nextState);
       setSelectedId(nextState.items[0]?.id ?? selectedId);
       setInventoryResetSignal((value) => value + 1);
@@ -275,7 +273,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleCreateItemForLocation(locationId: string): Promise<string | undefined> {
     try {
-      const nextState = await createItemAction(locationId, role);
+      const nextState = await createItemAction(locationId, activeAccountId || "");
       setState(nextState);
       setSelectedId(nextState.items[0]?.id ?? selectedId);
       setInventoryResetSignal((value) => value + 1);
@@ -288,7 +286,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   async function uploadPhotosForItem(itemId: string, filesList: FileList | File[]) {
     const files = Array.from(filesList);
     const itemToUpdate = state.items.find((item) => item.id === itemId);
-    if (!files.length || !itemToUpdate || !can(role, "add:photos")) return;
+    if (!files.length || !itemToUpdate || !can(activeAccount.role, "add:photos")) return;
     try {
       const photoPayloads = await Promise.all(
         files.map((file) =>
@@ -300,7 +298,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           })
         )
       );
-      const nextState = await addPhotosToItemAction(itemId, photoPayloads, role);
+      const nextState = await addPhotosToItemAction(itemId, photoPayloads, activeAccountId || "");
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -315,7 +313,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleSetFrontPhoto(itemId: string, photoId: string) {
     try {
-      const nextState = await setFrontPhotoAction(itemId, photoId, role);
+      const nextState = await setFrontPhotoAction(itemId, photoId, activeAccountId || "");
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -324,7 +322,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleDeactivatePhoto(itemId: string, photoId: string) {
     try {
-      const nextState = await deactivatePhotoAction(itemId, photoId, role);
+      const nextState = await deactivatePhotoAction(itemId, photoId, activeAccountId || "");
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -333,7 +331,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleUpdateLocation(locationId: string, patch: Partial<Location>) {
     try {
-      const nextState = await updateLocationAction(locationId, patch);
+      const nextState = await updateLocationAction(locationId, patch, activeAccountId || "");
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -342,7 +340,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleAddLocation(name: string, notes: string) {
     try {
-      const nextState = await addLocationAction(name, notes);
+      const nextState = await addLocationAction(name, notes, activeAccountId || "");
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -351,7 +349,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleCreateAccount(name: string, locationIds: string[], customPassword?: string) {
     try {
-      const nextState = await createAccountAction(name, locationIds, customPassword);
+      const nextState = await createAccountAction(activeAccountId || "", name, locationIds, customPassword);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -360,13 +358,12 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleDeleteAccount(accountId: string) {
     try {
-      const nextState = await deleteAccountAction(accountId);
+      const nextState = await deleteAccountAction(activeAccountId || "", accountId);
       setState(nextState);
       if (activeAccountId === accountId) {
         const defaultAcc = nextState.accounts.find(a => a.role === "manager") || nextState.accounts[0];
         if (defaultAcc) {
           setActiveAccountId(defaultAcc.id);
-          setRole(defaultAcc.role);
         }
       }
     } catch {
@@ -378,7 +375,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     const matchedAcc = state.accounts?.find(a => a.id === accountId);
     if (matchedAcc) {
       setActiveAccountId(matchedAcc.id);
-      setRole(matchedAcc.role);
       
       if (matchedAcc.role === "operator") {
         const allowedLocs = matchedAcc.locationIds;
@@ -395,7 +391,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function resetDemo() {
     try {
-      const nextState = await resetDemoAction();
+      const nextState = await resetDemoAction(activeAccountId || "");
       setState(nextState);
       setSelectedId(nextState.items[0]?.id ?? "");
       setDashboardLocationFilter("all");
@@ -404,7 +400,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
       const defaultAcc = nextState.accounts.find(a => a.role === "manager") || nextState.accounts[0];
       if (defaultAcc) {
         setActiveAccountId(defaultAcc.id);
-        setRole(defaultAcc.role);
         
         if (defaultAcc.role === "operator") {
           const allowedLocs = defaultAcc.locationIds;
@@ -471,7 +466,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             onClose={() => setUserSwitcherOpen(false)}
             stateLocations={state.locations}
             setActiveAccountId={setActiveAccountId}
-            setRole={setRole}
             setActiveLocationId={setActiveLocationId}
             setView={setView}
             setUserSwitcherOpen={setUserSwitcherOpen}
@@ -614,7 +608,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           <InventoryCardsView
             locale={locale}
             state={state}
-            role={role}
+            role={activeAccount.role}
             setSelectedId={setSelectedId}
             selectedId={selectedId}
             resetSignal={inventoryResetSignal}
@@ -639,7 +633,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         {view === "locations" && (
           <LocationsView
             locale={locale}
-            role={role}
+            role={activeAccount.role}
             state={state}
             onUpdateLocation={handleUpdateLocation}
             onAddLocation={handleAddLocation}
@@ -649,7 +643,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         {view === "accounts" && (
           <AccountsView
             locale={locale}
-            role={role}
+            role={activeAccount.role}
             state={state}
             onCreateAccount={handleCreateAccount}
             onDeleteAccount={handleDeleteAccount}
@@ -667,7 +661,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           onClose={() => setUserSwitcherOpen(false)}
           stateLocations={state.locations}
           setActiveAccountId={setActiveAccountId}
-          setRole={setRole}
           setActiveLocationId={setActiveLocationId}
           setView={setView}
           setUserSwitcherOpen={setUserSwitcherOpen}
@@ -722,7 +715,6 @@ function LoginModal({
   onClose,
   stateLocations,
   setActiveAccountId,
-  setRole,
   setActiveLocationId,
   setView,
   setUserSwitcherOpen,
@@ -732,7 +724,6 @@ function LoginModal({
   onClose: () => void;
   stateLocations: Location[];
   setActiveAccountId: (id: string | null) => void;
-  setRole: (role: Role) => void;
   setActiveLocationId: (id: string) => void;
   setView: (view: View) => void;
   setUserSwitcherOpen: (open: boolean) => void;
@@ -741,27 +732,36 @@ function LoginModal({
   const [passwordVal, setPasswordVal] = useState("");
   const [errorMsg, setErrorMsg] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  function getDemoPassword(login: string): string {
+    const lower = login.toLowerCase();
+    if (lower === "mgeneral") return "manager1";
+    if (lower === "oannecy") return "operator1";
+    if (lower === "olyon") return "operator2";
+    return "••••••••";
+  }
+
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const matchedAcc = accounts?.find(
-      (a) => a.login.toLowerCase() === loginVal.trim().toLowerCase() && a.password === passwordVal
-    );
-    if (matchedAcc) {
-      setActiveAccountId(matchedAcc.id);
-      setRole(matchedAcc.role);
-      setErrorMsg(false);
-      setUserSwitcherOpen(false);
-      
-      if (matchedAcc.role === "operator") {
-        const allowedLocs = matchedAcc.locationIds;
-        const defaultLocId = allowedLocs[0] || stateLocations.find(l => l.active)?.id || "";
-        setActiveLocationId(defaultLocId);
-        setView("inventory");
+    try {
+      const matchedAcc = await verifyCredentialsAction(loginVal.trim(), passwordVal);
+      if (matchedAcc) {
+        setActiveAccountId(matchedAcc.id);
+        setErrorMsg(false);
+        setUserSwitcherOpen(false);
+        
+        if (matchedAcc.role === "operator") {
+          const allowedLocs = matchedAcc.locationIds;
+          const defaultLocId = allowedLocs[0] || stateLocations.find(l => l.active)?.id || "";
+          setActiveLocationId(defaultLocId);
+          setView("inventory");
+        } else {
+          setActiveLocationId("");
+          setView("dashboard");
+        }
       } else {
-        setActiveLocationId("");
-        setView("dashboard");
+        setErrorMsg(true);
       }
-    } else {
+    } catch {
       setErrorMsg(true);
     }
   }
@@ -849,7 +849,7 @@ function LoginModal({
             {accounts?.map((acc) => (
               <li key={acc.id}>
                 <strong>{acc.name}</strong> ({roleLabel(acc.role)})<br />
-                <span>Login: <code>{acc.login}</code> / Pass: <code>{acc.password}</code></span>
+                <span>Login: <code>{acc.login}</code> / Pass: <code>{getDemoPassword(acc.login)}</code></span>
               </li>
             ))}
           </ul>

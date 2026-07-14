@@ -13,7 +13,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@auth0/nextjs-auth0": "4.21.0",
     "@tailwindcss/postcss": "4.1.17",
     "clsx": "2.1.1",
     "drizzle-orm": "0.45.2",

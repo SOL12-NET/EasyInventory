@@ -1,0 +1,182 @@
+{
+  "organization": {
+    "id": "org-sol12-demo",
+    "name": "SOL12 Demo",
+    "plan": "demo"
+  },
+  "locations": [
+    {
+      "id": "loc-annecy",
+      "name": "Annecy",
+      "notes": "Showroom et retours",
+      "active": true,
+      "createdAt": "2026-07-14T16:28:57.244Z",
+      "updatedAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "loc-geneve",
+      "name": "Geneve",
+      "notes": "Stock evenementiel",
+      "active": true,
+      "createdAt": "2026-07-14T16:28:57.244Z",
+      "updatedAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "loc-lyon",
+      "name": "Lyon",
+      "notes": "Atelier reparation",
+      "active": true,
+      "createdAt": "2026-07-14T16:28:57.244Z",
+      "updatedAt": "2026-07-14T16:28:57.244Z"
+    }
+  ],
+  "items": [
+    {
+      "id": "item-1001",
+      "tag": "1001",
+      "name": "Machine a cafe mobile",
+      "category": "Appliance",
+      "status": "AVAILABLE",
+      "locationId": "loc-annecy",
+      "notes": "Kit complet, prevoir capsules.",
+      "frontPhotoId": "photo-1001",
+      "lastAction": "NEW_ITEM",
+      "lastActionBy": "operator",
+      "lastActionAt": "2026-07-14T16:28:57.244Z",
+      "createdAt": "2026-07-14T16:28:57.244Z",
+      "updatedAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "item-1002",
+      "tag": "1002",
+      "name": "Table pliante XL",
+      "category": "Furniture",
+      "status": "RENTED",
+      "locationId": "loc-geneve",
+      "notes": "Louee pour evenement client.",
+      "frontPhotoId": null,
+      "lastAction": "SET_RENTED",
+      "lastActionBy": "manager",
+      "lastActionAt": "2026-07-14T16:28:57.244Z",
+      "createdAt": "2026-07-14T16:28:57.244Z",
+      "updatedAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "item-1003",
+      "tag": "1003",
+      "name": "Perceuse sans fil",
+      "category": "Tool",
+      "status": "REPAIR",
+      "locationId": "loc-lyon",
+      "notes": "Batterie a remplacer.",
+      "frontPhotoId": "photo-1003",
+      "lastAction": "SET_REPAIR",
+      "lastActionBy": "operator",
+      "lastActionAt": "2026-07-14T16:28:57.244Z",
+      "createdAt": "2026-07-14T16:28:57.244Z",
+      "updatedAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "item-1004",
+      "tag": "1004",
+      "name": "Lot rallonges electriques",
+      "category": "Accessory",
+      "status": "AVAILABLE",
+      "locationId": "loc-annecy",
+      "notes": "Controle le mois dernier.",
+      "frontPhotoId": null,
+      "lastAction": null,
+      "lastActionBy": null,
+      "lastActionAt": null,
+      "createdAt": "2026-07-14T16:28:57.244Z",
+      "updatedAt": "2026-07-14T16:28:57.244Z"
+    }
+  ],
+  "photos": [
+    {
+      "id": "photo-1001",
+      "itemId": "item-1001",
+      "url": "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=900&q=80",
+      "originalName": "coffee-machine.jpg",
+      "active": true,
+      "createdAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "photo-1003",
+      "itemId": "item-1003",
+      "url": "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=80",
+      "originalName": "drill.jpg",
+      "active": true,
+      "createdAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "photo-1003-b",
+      "itemId": "item-1003",
+      "url": "https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?auto=format&fit=crop&w=900&q=80",
+      "originalName": "tool-bench.jpg",
+      "active": true,
+      "createdAt": "2026-07-14T16:28:57.244Z"
+    }
+  ],
+  "actions": [
+    {
+      "id": "act-1",
+      "itemId": "item-1001",
+      "type": "NEW_ITEM",
+      "actor": "operator",
+      "at": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "act-2",
+      "itemId": "item-1002",
+      "type": "SET_RENTED",
+      "actor": "manager",
+      "at": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "act-3",
+      "itemId": "item-1003",
+      "type": "SET_REPAIR",
+      "actor": "operator",
+      "at": "2026-07-14T16:28:57.244Z"
+    }
+  ],
+  "accounts": [
+    {
+      "id": "acc-manager",
+      "name": "Manager Général",
+      "role": "manager",
+      "locationIds": [
+        "loc-annecy",
+        "loc-geneve",
+        "loc-lyon"
+      ],
+      "login": "mgeneral",
+      "password": "manager1",
+      "createdAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "acc-op-annecy-geneve",
+      "name": "Opérateur Annecy & Genève",
+      "role": "operator",
+      "locationIds": [
+        "loc-annecy",
+        "loc-geneve"
+      ],
+      "login": "oannecy",
+      "password": "operator1",
+      "createdAt": "2026-07-14T16:28:57.244Z"
+    },
+    {
+      "id": "acc-op-lyon",
+      "name": "Opérateur Lyon",
+      "role": "operator",
+      "locationIds": [
+        "loc-lyon"
+      ],
+      "login": "olyon",
+      "password": "operator2",
+      "createdAt": "2026-07-14T16:28:57.244Z"
+    }
+  ]
+}
