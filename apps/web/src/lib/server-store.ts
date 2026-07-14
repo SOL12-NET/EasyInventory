@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import bcrypt from "bcryptjs";
 import { db, hasDbConfig } from "./db";
 import { organizations, locations, items, photos, actions, accounts } from "./schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -30,18 +31,29 @@ function loadJsonState(): InventoryState {
       const data = fs.readFileSync(JSON_DB_PATH, "utf-8");
       const state = JSON.parse(data) as InventoryState;
       if (!state.accounts) {
-        state.accounts = cloneDemoState().accounts;
+        state.accounts = cloneDemoState().accounts.map((acc) => ({
+          ...acc,
+          password: acc.password.startsWith("$2") ? acc.password : bcrypt.hashSync(acc.password, 10),
+        }));
         saveJsonState(state);
       } else {
         let modified = false;
         state.accounts = state.accounts.map((acc) => {
+          let updatedPassword = acc.password;
           if (!acc.login || !acc.password) {
             const seedAcc = cloneDemoState().accounts.find((sa) => sa.id === acc.id);
+            updatedPassword = acc.password || seedAcc?.password || "password123";
             modified = true;
+          }
+          if (!updatedPassword.startsWith("$2a$") && !updatedPassword.startsWith("$2b$") && !updatedPassword.startsWith("$2y$")) {
+            updatedPassword = bcrypt.hashSync(updatedPassword, 10);
+            modified = true;
+          }
+          if (modified || !acc.login) {
             return {
               ...acc,
-              login: acc.login || seedAcc?.login || "user",
-              password: acc.password || seedAcc?.password || "password123",
+              login: acc.login || "user",
+              password: updatedPassword,
             };
           }
           return acc;
@@ -57,6 +69,10 @@ function loadJsonState(): InventoryState {
   }
   // Initialize and save demo state if file doesn't exist
   const state = cloneDemoState();
+  state.accounts = state.accounts.map((acc) => ({
+    ...acc,
+    password: bcrypt.hashSync(acc.password, 10),
+  }));
   saveJsonState(state);
   return state;
 }
@@ -143,7 +159,7 @@ async function seedPostgres(orgId: string) {
       role: acc.role,
       locationIds: acc.locationIds,
       login: acc.login,
-      password: acc.password,
+      password: acc.password.startsWith("$2") ? acc.password : bcrypt.hashSync(acc.password, 10),
       createdAt: acc.createdAt ? new Date(acc.createdAt) : undefined,
     }).onConflictDoNothing();
   }
@@ -534,7 +550,7 @@ export const serverStore = {
           role: "operator",
           locationIds,
           login,
-          password,
+          password: bcrypt.hashSync(password, 10),
         });
         return await getPostgresState(DEMO_ORG_ID);
       } catch (error) {
@@ -555,7 +571,7 @@ export const serverStore = {
         role: "operator" as const,
         locationIds,
         login,
-        password,
+        password: bcrypt.hashSync(password, 10),
         createdAt: at,
       },
     ];
@@ -584,7 +600,7 @@ export const serverStore = {
     if (hasDbConfig && db) {
       try {
         await db.update(accounts)
-          .set({ password: newPassword })
+          .set({ password: bcrypt.hashSync(newPassword, 10) })
           .where(eq(accounts.id, accountId));
         return await getPostgresState(DEMO_ORG_ID);
       } catch (error) {
@@ -595,7 +611,7 @@ export const serverStore = {
     const state = loadJsonState();
     const next = {
       ...state,
-      accounts: state.accounts.map((a) => (a.id === accountId ? { ...a, password: newPassword } : a)),
+      accounts: state.accounts.map((a) => (a.id === accountId ? { ...a, password: bcrypt.hashSync(newPassword, 10) } : a)),
     };
     saveJsonState(next);
     return next;
@@ -607,7 +623,7 @@ export const serverStore = {
         const account = await db.query.accounts.findFirst({
           where: eq(accounts.login, login),
         });
-        if (account && account.password === passwordVal) {
+        if (account && bcrypt.compareSync(passwordVal, account.password)) {
           return {
             id: account.id,
             name: account.name,
@@ -626,7 +642,7 @@ export const serverStore = {
 
     const state = loadJsonState();
     const account = state.accounts.find(
-      (a) => a.login.toLowerCase() === login.toLowerCase() && a.password === passwordVal
+      (a) => a.login.toLowerCase() === login.toLowerCase() && bcrypt.compareSync(passwordVal, a.password)
     );
     if (account) {
       return {

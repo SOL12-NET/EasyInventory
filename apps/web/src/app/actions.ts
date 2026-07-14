@@ -3,6 +3,10 @@
 import { serverStore } from "@/lib/server-store";
 import type { InventoryState, Item, Location, Role, Account } from "@/lib/types";
 import { can } from "@/lib/permissions";
+import { cookies, headers } from "next/headers";
+import crypto from "crypto";
+
+const SESSION_SECRET = process.env.SESSION_SECRET || "default-super-secret-key-32-bytes-long";
 
 // Helper to remove passwords from the state before returning to the browser
 function sanitizeState(state: InventoryState): InventoryState {
@@ -15,8 +19,61 @@ function sanitizeState(state: InventoryState): InventoryState {
   };
 }
 
-// Helper to look up an account and verify it exists
-async function getAuthenticatedActor(accountId: string): Promise<Account> {
+// Token signing helper
+function signToken(payload: string): string {
+  const hmac = crypto.createHmac("sha256", SESSION_SECRET);
+  hmac.update(payload);
+  const signature = hmac.digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+// Token verification helper
+function verifyToken(token: string): string | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 2) return null;
+    const [payload, signature] = parts;
+    const expectedSignature = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
+    if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      return payload;
+    }
+  } catch {}
+  return null;
+}
+
+// In-memory rate limiting map for login attempts per IP
+const loginAttempts = new Map<string, { count: number; lockUntil: number }>();
+
+function rateLimitLogin(ip: string) {
+  const now = Date.now();
+  const attempt = loginAttempts.get(ip);
+  if (attempt) {
+    if (now < attempt.lockUntil) {
+      const waitTime = Math.ceil((attempt.lockUntil - now) / 1000);
+      throw new Error(`Too many login attempts. Please wait ${waitTime} seconds.`);
+    }
+    if (attempt.count >= 5) {
+      attempt.count = 1;
+      attempt.lockUntil = now + 30000; // Lock for 30s
+      throw new Error("Too many login attempts. Please wait 30 seconds.");
+    }
+    attempt.count += 1;
+  } else {
+    loginAttempts.set(ip, { count: 1, lockUntil: 0 });
+  }
+}
+
+// Helper to look up an account and verify it exists from session cookie
+async function getAuthenticatedActor(): Promise<Account> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("session_token")?.value;
+  if (!token) {
+    throw new Error("Unauthorized: No session token found");
+  }
+  const accountId = verifyToken(token);
+  if (!accountId) {
+    throw new Error("Unauthorized: Invalid session token");
+  }
   const state = await serverStore.getState();
   const account = state.accounts.find((a) => a.id === accountId);
   if (!account) {
@@ -25,21 +82,75 @@ async function getAuthenticatedActor(accountId: string): Promise<Account> {
   return account;
 }
 
-export async function getInventoryStateAction(): Promise<InventoryState> {
-  return sanitizeState(await serverStore.getState());
+export async function getInventoryStateAction(): Promise<{
+  state: InventoryState;
+  activeAccountId: string | null;
+  demoPasswords?: Record<string, string>;
+}> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("session_token")?.value;
+  let activeAccountId: string | null = null;
+  if (token) {
+    activeAccountId = verifyToken(token);
+  }
+
+  const rawState = await serverStore.getState();
+  const sanitized = sanitizeState(rawState);
+
+  const response: {
+    state: InventoryState;
+    activeAccountId: string | null;
+    demoPasswords?: Record<string, string>;
+  } = {
+    state: sanitized,
+    activeAccountId,
+  };
+
+  if (rawState.organization.plan === "demo") {
+    response.demoPasswords = {
+      mgeneral: "manager1",
+      oannecy: "operator1",
+      olyon: "operator2",
+    };
+  }
+
+  return response;
 }
 
 export async function verifyCredentialsAction(login: string, passwordVal: string): Promise<Account | null> {
-  return serverStore.verifyCredentials(login, passwordVal);
+  const reqHeaders = await headers();
+  const clientIp = reqHeaders.get("x-forwarded-for") || "unknown-ip";
+  
+  rateLimitLogin(clientIp);
+
+  const account = await serverStore.verifyCredentials(login, passwordVal);
+  if (account) {
+    loginAttempts.delete(clientIp);
+    const token = signToken(account.id);
+    const cookieStore = await cookies();
+    cookieStore.set("session_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: "/",
+    });
+    return account;
+  }
+  return null;
+}
+
+export async function logoutAction(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete("session_token");
 }
 
 export async function updateItemAction(
   itemId: string,
   patch: Partial<Item>,
   actionType: string,
-  accountId: string,
 ): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   // Authorization checks
@@ -62,8 +173,8 @@ export async function updateItemAction(
   return sanitizeState(await serverStore.updateItem(itemId, patch, actionType, userRole));
 }
 
-export async function createItemAction(locationId: string, accountId: string): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+export async function createItemAction(locationId: string): Promise<InventoryState> {
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   if (!can(userRole, "edit:item-core")) {
@@ -76,9 +187,8 @@ export async function createItemAction(locationId: string, accountId: string): P
 export async function updateLocationAction(
   locationId: string,
   patch: Partial<Location>,
-  accountId: string,
 ): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   if (!can(userRole, "edit:locations")) {
@@ -88,8 +198,8 @@ export async function updateLocationAction(
   return sanitizeState(await serverStore.updateLocation(locationId, patch));
 }
 
-export async function addLocationAction(name: string, notes: string, accountId: string): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+export async function addLocationAction(name: string, notes: string): Promise<InventoryState> {
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   if (!can(userRole, "edit:locations")) {
@@ -102,9 +212,8 @@ export async function addLocationAction(name: string, notes: string, accountId: 
 export async function addPhotosToItemAction(
   itemId: string,
   photosList: Array<{ url: string; originalName: string }>,
-  accountId: string,
 ): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   if (!can(userRole, "add:photos")) {
@@ -114,8 +223,8 @@ export async function addPhotosToItemAction(
   return sanitizeState(await serverStore.addPhotosToItem(itemId, photosList, userRole));
 }
 
-export async function setFrontPhotoAction(itemId: string, photoId: string, accountId: string): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+export async function setFrontPhotoAction(itemId: string, photoId: string): Promise<InventoryState> {
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   if (!can(userRole, "manage:photos")) {
@@ -125,8 +234,8 @@ export async function setFrontPhotoAction(itemId: string, photoId: string, accou
   return sanitizeState(await serverStore.setFrontPhoto(itemId, photoId, userRole));
 }
 
-export async function deactivatePhotoAction(itemId: string, photoId: string, accountId: string): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+export async function deactivatePhotoAction(itemId: string, photoId: string): Promise<InventoryState> {
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   if (!can(userRole, "manage:photos")) {
@@ -136,8 +245,8 @@ export async function deactivatePhotoAction(itemId: string, photoId: string, acc
   return sanitizeState(await serverStore.deactivatePhoto(itemId, photoId, userRole));
 }
 
-export async function resetDemoAction(accountId: string): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+export async function resetDemoAction(): Promise<InventoryState> {
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   if (!can(userRole, "reset:demo")) {
@@ -148,12 +257,11 @@ export async function resetDemoAction(accountId: string): Promise<InventoryState
 }
 
 export async function createAccountAction(
-  accountId: string,
   name: string,
   locationIds: string[],
   customPassword?: string,
 ): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   const isManager = userRole === "owner" || userRole === "admin" || userRole === "manager";
@@ -164,8 +272,8 @@ export async function createAccountAction(
   return sanitizeState(await serverStore.createAccount(name, locationIds, customPassword));
 }
 
-export async function deleteAccountAction(accountId: string, targetAccountId: string): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+export async function deleteAccountAction(targetAccountId: string): Promise<InventoryState> {
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
   const isManager = userRole === "owner" || userRole === "admin" || userRole === "manager";
@@ -177,12 +285,12 @@ export async function deleteAccountAction(accountId: string, targetAccountId: st
 }
 
 export async function changePasswordAction(
-  accountId: string,
   targetAccountId: string,
   newPassword: string,
 ): Promise<InventoryState> {
-  const actorAccount = await getAuthenticatedActor(accountId);
+  const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
+  const accountId = actorAccount.id;
 
   const isManager = userRole === "owner" || userRole === "admin" || userRole === "manager";
   const isSelf = accountId === targetAccountId;

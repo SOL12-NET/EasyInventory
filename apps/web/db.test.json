@@ -10,24 +10,24 @@
       "name": "Annecy",
       "notes": "Showroom et retours",
       "active": true,
-      "createdAt": "2026-07-14T16:28:57.244Z",
-      "updatedAt": "2026-07-14T16:28:57.244Z"
+      "createdAt": "2026-07-14T16:52:59.629Z",
+      "updatedAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "loc-geneve",
       "name": "Geneve",
       "notes": "Stock evenementiel",
       "active": true,
-      "createdAt": "2026-07-14T16:28:57.244Z",
-      "updatedAt": "2026-07-14T16:28:57.244Z"
+      "createdAt": "2026-07-14T16:52:59.629Z",
+      "updatedAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "loc-lyon",
       "name": "Lyon",
       "notes": "Atelier reparation",
       "active": true,
-      "createdAt": "2026-07-14T16:28:57.244Z",
-      "updatedAt": "2026-07-14T16:28:57.244Z"
+      "createdAt": "2026-07-14T16:52:59.629Z",
+      "updatedAt": "2026-07-14T16:52:59.629Z"
     }
   ],
   "items": [
@@ -42,9 +42,9 @@
       "frontPhotoId": "photo-1001",
       "lastAction": "NEW_ITEM",
       "lastActionBy": "operator",
-      "lastActionAt": "2026-07-14T16:28:57.244Z",
-      "createdAt": "2026-07-14T16:28:57.244Z",
-      "updatedAt": "2026-07-14T16:28:57.244Z"
+      "lastActionAt": "2026-07-14T16:52:59.629Z",
+      "createdAt": "2026-07-14T16:52:59.629Z",
+      "updatedAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "item-1002",
@@ -57,9 +57,9 @@
       "frontPhotoId": null,
       "lastAction": "SET_RENTED",
       "lastActionBy": "manager",
-      "lastActionAt": "2026-07-14T16:28:57.244Z",
-      "createdAt": "2026-07-14T16:28:57.244Z",
-      "updatedAt": "2026-07-14T16:28:57.244Z"
+      "lastActionAt": "2026-07-14T16:52:59.629Z",
+      "createdAt": "2026-07-14T16:52:59.629Z",
+      "updatedAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "item-1003",
@@ -72,9 +72,9 @@
       "frontPhotoId": "photo-1003",
       "lastAction": "SET_REPAIR",
       "lastActionBy": "operator",
-      "lastActionAt": "2026-07-14T16:28:57.244Z",
-      "createdAt": "2026-07-14T16:28:57.244Z",
-      "updatedAt": "2026-07-14T16:28:57.244Z"
+      "lastActionAt": "2026-07-14T16:52:59.629Z",
+      "createdAt": "2026-07-14T16:52:59.629Z",
+      "updatedAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "item-1004",
@@ -88,8 +88,8 @@
       "lastAction": null,
       "lastActionBy": null,
       "lastActionAt": null,
-      "createdAt": "2026-07-14T16:28:57.244Z",
-      "updatedAt": "2026-07-14T16:28:57.244Z"
+      "createdAt": "2026-07-14T16:52:59.629Z",
+      "updatedAt": "2026-07-14T16:52:59.629Z"
     }
   ],
   "photos": [
@@ -99,7 +99,7 @@
       "url": "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=900&q=80",
       "originalName": "coffee-machine.jpg",
       "active": true,
-      "createdAt": "2026-07-14T16:28:57.244Z"
+      "createdAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "photo-1003",
@@ -107,7 +107,7 @@
       "url": "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=80",
       "originalName": "drill.jpg",
       "active": true,
-      "createdAt": "2026-07-14T16:28:57.244Z"
+      "createdAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "photo-1003-b",
@@ -115,7 +115,7 @@
       "url": "https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?auto=format&fit=crop&w=900&q=80",
       "originalName": "tool-bench.jpg",
       "active": true,
-      "createdAt": "2026-07-14T16:28:57.244Z"
+      "createdAt": "2026-07-14T16:52:59.629Z"
     }
   ],
   "actions": [
@@ -124,21 +124,21 @@
       "itemId": "item-1001",
       "type": "NEW_ITEM",
       "actor": "operator",
-      "at": "2026-07-14T16:28:57.244Z"
+      "at": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "act-2",
       "itemId": "item-1002",
       "type": "SET_RENTED",
       "actor": "manager",
-      "at": "2026-07-14T16:28:57.244Z"
+      "at": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "act-3",
       "itemId": "item-1003",
       "type": "SET_REPAIR",
       "actor": "operator",
-      "at": "2026-07-14T16:28:57.244Z"
+      "at": "2026-07-14T16:52:59.629Z"
     }
   ],
   "accounts": [
@@ -152,8 +152,8 @@
         "loc-lyon"
       ],
       "login": "mgeneral",
-      "password": "manager1",
-      "createdAt": "2026-07-14T16:28:57.244Z"
+      "password": "$2b$10$u4d81/UHqxgxLNy8KlyWr.rfkEIaF7V2C6jvA9B7eycrHKA/NxNVK",
+      "createdAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "acc-op-annecy-geneve",
@@ -164,8 +164,8 @@
         "loc-geneve"
       ],
       "login": "oannecy",
-      "password": "operator1",
-      "createdAt": "2026-07-14T16:28:57.244Z"
+      "password": "$2b$10$TSd0yOoiQaZNOx.N7qqAFuCd3wHfyIm3bUDDslVbW2YDBzoofWzqy",
+      "createdAt": "2026-07-14T16:52:59.629Z"
     },
     {
       "id": "acc-op-lyon",
@@ -175,8 +175,8 @@
         "loc-lyon"
       ],
       "login": "olyon",
-      "password": "operator2",
-      "createdAt": "2026-07-14T16:28:57.244Z"
+      "password": "$2b$10$sBuOpPzysGk9JTNWZ4hHEeGHH.8xS4vJBrEhl/yP6GovIsX7fxGVS",
+      "createdAt": "2026-07-14T16:52:59.629Z"
     }
   ]
 }

@@ -44,6 +44,7 @@ import {
   createAccountAction,
   deleteAccountAction,
   changePasswordAction,
+  logoutAction,
 } from "@/app/actions";
 
 const themeStorageKey = "easyinventory.saas.theme";
@@ -73,6 +74,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
   const [authLogin, setAuthLogin] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState(false);
+  const [demoPasswords, setDemoPasswords] = useState<Record<string, string>>({});
 
   // Sidebar sizing & collapse state
   const [sidebarWidth, setSidebarWidth] = useState(286);
@@ -95,11 +97,16 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     let active = true;
     async function init() {
       let loadedState = state;
+      let sessionAccountId: string | null = null;
       try {
-        const serverState = await getInventoryStateAction();
+        const response = await getInventoryStateAction();
         if (active) {
-          setState(serverState);
-          loadedState = serverState;
+          setState(response.state);
+          loadedState = response.state;
+          sessionAccountId = response.activeAccountId;
+          if (response.demoPasswords) {
+            setDemoPasswords(response.demoPasswords);
+          }
         }
       } catch (err) {
         console.error("Failed to load server state:", err);
@@ -109,7 +116,6 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
         const savedTheme = window.localStorage.getItem(themeStorageKey);
         const savedWidth = window.localStorage.getItem(sidebarWidthStorageKey);
         const savedCollapsed = window.localStorage.getItem(sidebarCollapsedStorageKey);
-        const savedAccountId = window.localStorage.getItem(activeAccountStorageKey);
         const savedLocationId = window.localStorage.getItem(activeLocationStorageKey);
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
@@ -118,9 +124,9 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           if (savedWidth) setSidebarWidth(parseInt(savedWidth, 10));
           if (savedCollapsed) setCollapsed(savedCollapsed === "true");
 
-          // Resolve active account from loaded state or default to manager
+          // Resolve active account from server session
           const accountsList = loadedState.accounts || [];
-          const matchedAcc = accountsList.find((a) => a.id === savedAccountId) || accountsList.find((a) => a.role === "manager") || accountsList[0] || null;
+          const matchedAcc = accountsList.find((a) => a.id === sessionAccountId);
           
           if (matchedAcc) {
             setActiveAccountId(matchedAcc.id);
@@ -137,6 +143,9 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             if (matchedLocId) {
               setActiveLocationId(matchedLocId);
             }
+          } else {
+            setActiveAccountId(null);
+            setUserSwitcherOpen(true);
           }
         }
       } catch {
@@ -230,7 +239,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleUpdateItem(id: string, patch: Partial<Item>, action = "EDIT_ITEM") {
     try {
-      const nextState = await updateItemAction(id, patch, action, activeAccountId || "");
+      const nextState = await updateItemAction(id, patch, action);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -245,7 +254,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleAccountPasswordChange(accountId: string, newPassword: string) {
     try {
-      const nextState = await changePasswordAction(activeAccountId || "", accountId, newPassword);
+      const nextState = await changePasswordAction(accountId, newPassword);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -261,7 +270,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
     const locationId = state.locations.find((location) => location.active)?.id;
     if (!locationId) return;
     try {
-      const nextState = await createItemAction(locationId, activeAccountId || "");
+      const nextState = await createItemAction(locationId);
       setState(nextState);
       setSelectedId(nextState.items[0]?.id ?? selectedId);
       setInventoryResetSignal((value) => value + 1);
@@ -273,7 +282,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleCreateItemForLocation(locationId: string): Promise<string | undefined> {
     try {
-      const nextState = await createItemAction(locationId, activeAccountId || "");
+      const nextState = await createItemAction(locationId);
       setState(nextState);
       setSelectedId(nextState.items[0]?.id ?? selectedId);
       setInventoryResetSignal((value) => value + 1);
@@ -298,7 +307,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           })
         )
       );
-      const nextState = await addPhotosToItemAction(itemId, photoPayloads, activeAccountId || "");
+      const nextState = await addPhotosToItemAction(itemId, photoPayloads);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -313,7 +322,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleSetFrontPhoto(itemId: string, photoId: string) {
     try {
-      const nextState = await setFrontPhotoAction(itemId, photoId, activeAccountId || "");
+      const nextState = await setFrontPhotoAction(itemId, photoId);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -322,7 +331,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleDeactivatePhoto(itemId: string, photoId: string) {
     try {
-      const nextState = await deactivatePhotoAction(itemId, photoId, activeAccountId || "");
+      const nextState = await deactivatePhotoAction(itemId, photoId);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -331,7 +340,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleUpdateLocation(locationId: string, patch: Partial<Location>) {
     try {
-      const nextState = await updateLocationAction(locationId, patch, activeAccountId || "");
+      const nextState = await updateLocationAction(locationId, patch);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -340,7 +349,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleAddLocation(name: string, notes: string) {
     try {
-      const nextState = await addLocationAction(name, notes, activeAccountId || "");
+      const nextState = await addLocationAction(name, notes);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -349,7 +358,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleCreateAccount(name: string, locationIds: string[], customPassword?: string) {
     try {
-      const nextState = await createAccountAction(activeAccountId || "", name, locationIds, customPassword);
+      const nextState = await createAccountAction(name, locationIds, customPassword);
       setState(nextState);
     } catch {
       setStorageError(true);
@@ -358,7 +367,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleDeleteAccount(accountId: string) {
     try {
-      const nextState = await deleteAccountAction(activeAccountId || "", accountId);
+      const nextState = await deleteAccountAction(accountId);
       setState(nextState);
       if (activeAccountId === accountId) {
         const defaultAcc = nextState.accounts.find(a => a.role === "manager") || nextState.accounts[0];
@@ -391,7 +400,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function resetDemo() {
     try {
-      const nextState = await resetDemoAction(activeAccountId || "");
+      const nextState = await resetDemoAction();
       setState(nextState);
       setSelectedId(nextState.items[0]?.id ?? "");
       setDashboardLocationFilter("all");
@@ -451,7 +460,11 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           activeAccount={activeAccount}
           activeLocationId={activeLocationId}
           setActiveLocationId={setActiveLocationId}
-          onSwitchUser={() => setUserSwitcherOpen(true)}
+          onSwitchUser={async () => {
+            await logoutAction();
+            setActiveAccountId(null);
+            setUserSwitcherOpen(true);
+          }}
           onResetDemo={resetDemo}
           onUpdateItem={handleUpdateItem}
           onCreateItem={handleCreateItemForLocation}
@@ -469,6 +482,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
             setActiveLocationId={setActiveLocationId}
             setView={setView}
             setUserSwitcherOpen={setUserSwitcherOpen}
+            demoPasswords={demoPasswords}
           />
         )}
       </div>
@@ -511,7 +525,11 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
         <div
           className="sidebar-card"
-          onClick={() => setUserSwitcherOpen(true)}
+          onClick={async () => {
+            await logoutAction();
+            setActiveAccountId(null);
+            setUserSwitcherOpen(true);
+          }}
           style={{ cursor: "pointer" }}
           title={t(locale, "changeUser")}
         >
@@ -664,6 +682,7 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
           setActiveLocationId={setActiveLocationId}
           setView={setView}
           setUserSwitcherOpen={setUserSwitcherOpen}
+          demoPasswords={demoPasswords}
         />
       )}
     </main>
@@ -718,6 +737,7 @@ function LoginModal({
   setActiveLocationId,
   setView,
   setUserSwitcherOpen,
+  demoPasswords,
 }: {
   locale: Locale;
   accounts: Account[];
@@ -727,18 +747,11 @@ function LoginModal({
   setActiveLocationId: (id: string) => void;
   setView: (view: View) => void;
   setUserSwitcherOpen: (open: boolean) => void;
+  demoPasswords: Record<string, string>;
 }) {
   const [loginVal, setLoginVal] = useState("");
   const [passwordVal, setPasswordVal] = useState("");
   const [errorMsg, setErrorMsg] = useState(false);
-
-  function getDemoPassword(login: string): string {
-    const lower = login.toLowerCase();
-    if (lower === "mgeneral") return "manager1";
-    if (lower === "oannecy") return "operator1";
-    if (lower === "olyon") return "operator2";
-    return "••••••••";
-  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -849,7 +862,7 @@ function LoginModal({
             {accounts?.map((acc) => (
               <li key={acc.id}>
                 <strong>{acc.name}</strong> ({roleLabel(acc.role)})<br />
-                <span>Login: <code>{acc.login}</code> / Pass: <code>{getDemoPassword(acc.login)}</code></span>
+                <span>Login: <code>{acc.login}</code> / Pass: <code>{demoPasswords[acc.login] || "••••••••"}</code></span>
               </li>
             ))}
           </ul>

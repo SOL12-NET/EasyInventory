@@ -105,12 +105,17 @@ describe("serverStore persistence layer", () => {
     expect(created?.role).toBe("operator");
     expect(created?.locationIds).toEqual(["loc-annecy"]);
     expect(created?.login).toBe("noperator");
-    expect(created?.password).toHaveLength(8);
+    expect(created?.password.startsWith("$2")).toBe(true);
 
     // Change password
     const stateAfterChange = await serverStore.changePassword(created!.id, "secret99");
     const updated = stateAfterChange.accounts.find((a) => a.id === created!.id);
-    expect(updated?.password).toBe("secret99");
+    expect(updated?.password.startsWith("$2")).toBe(true);
+
+    // Verify credentials work with the new password
+    const verified = await serverStore.verifyCredentials(created!.login, "secret99");
+    expect(verified).not.toBeNull();
+    expect(verified?.id).toBe(created!.id);
 
     // Delete the operator account
     const finalState = await serverStore.deleteAccount(created!.id);
