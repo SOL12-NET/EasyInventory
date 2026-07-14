@@ -358,8 +358,13 @@ export function EasyInventoryApp({ initialView = "dashboard" }: { initialView?: 
 
   async function handleCreateAccount(name: string, locationIds: string[], customPassword?: string) {
     try {
-      const nextState = await createAccountAction(name, locationIds, customPassword);
+      const { state: nextState, passwordUsed } = await createAccountAction(name, locationIds, customPassword);
       setState(nextState);
+      const createdAcc = nextState.accounts.find((a) => a.name === name);
+      alert(locale === "fr"
+        ? `Compte créé avec succès !\nIdentifiant : ${createdAcc?.login || ""}\nMot de passe : ${passwordUsed}`
+        : `Account created successfully!\nLogin: ${createdAcc?.login || ""}\nPassword: ${passwordUsed}`
+      );
     } catch {
       setStorageError(true);
     }

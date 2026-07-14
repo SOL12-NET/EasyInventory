@@ -5,8 +5,18 @@ import type { InventoryState, Item, Location, Role, Account } from "@/lib/types"
 import { can } from "@/lib/permissions";
 import { cookies, headers } from "next/headers";
 import crypto from "crypto";
+import { generateRandomPassword } from "@/lib/auth-helpers";
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "default-super-secret-key-32-bytes-long";
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is not defined!");
+    }
+    return "development-only-fallback-session-secret-key-32-bytes-long";
+  }
+  return secret;
+}
 
 // Helper to remove passwords from the state before returning to the browser
 function sanitizeState(state: InventoryState): InventoryState {
@@ -21,7 +31,8 @@ function sanitizeState(state: InventoryState): InventoryState {
 
 // Token signing helper
 function signToken(payload: string): string {
-  const hmac = crypto.createHmac("sha256", SESSION_SECRET);
+  const secret = getSessionSecret();
+  const hmac = crypto.createHmac("sha256", secret);
   hmac.update(payload);
   const signature = hmac.digest("base64url");
   return `${payload}.${signature}`;
@@ -33,8 +44,12 @@ function verifyToken(token: string): string | null {
     const parts = token.split(".");
     if (parts.length !== 2) return null;
     const [payload, signature] = parts;
-    const expectedSignature = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
-    if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    const secret = getSessionSecret();
+    const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+    const sigBuf = Buffer.from(signature);
+    const expectedBuf = Buffer.from(expectedSignature);
+    if (sigBuf.length !== expectedBuf.length) return null;
+    if (crypto.timingSafeEqual(sigBuf, expectedBuf)) {
       return payload;
     }
   } catch {}
@@ -119,7 +134,7 @@ export async function getInventoryStateAction(): Promise<{
 
 export async function verifyCredentialsAction(login: string, passwordVal: string): Promise<Account | null> {
   const reqHeaders = await headers();
-  const clientIp = reqHeaders.get("x-forwarded-for") || "unknown-ip";
+  const clientIp = reqHeaders.get("x-real-ip") || reqHeaders.get("x-forwarded-for")?.split(',')[0].trim() || "unknown-ip";
   
   rateLimitLogin(clientIp);
 
@@ -260,7 +275,7 @@ export async function createAccountAction(
   name: string,
   locationIds: string[],
   customPassword?: string,
-): Promise<InventoryState> {
+): Promise<{ state: InventoryState; passwordUsed: string }> {
   const actorAccount = await getAuthenticatedActor();
   const userRole = actorAccount.role;
 
@@ -269,7 +284,9 @@ export async function createAccountAction(
     throw new Error("Forbidden: Cannot create accounts");
   }
 
-  return sanitizeState(await serverStore.createAccount(name, locationIds, customPassword));
+  const passwordUsed = customPassword || generateRandomPassword();
+  const nextState = sanitizeState(await serverStore.createAccount(name, locationIds, passwordUsed));
+  return { state: nextState, passwordUsed };
 }
 
 export async function deleteAccountAction(targetAccountId: string): Promise<InventoryState> {
