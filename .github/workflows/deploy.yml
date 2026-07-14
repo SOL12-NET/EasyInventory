@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - CTLQ
   schedule:
     # Trigger automatically every Sunday at 1:00 AM UTC (approx. 2:00 AM/3:00 AM French time)
     - cron: '0 1 * * 0'
@@ -87,8 +88,8 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             cd ${{ secrets.SSH_DEPLOY_PATH }}
-            git checkout main
-            git pull
-            docker compose pull
-            docker compose up -d --remove-orphans
+            git fetch --all
+            git reset --hard origin/${{ github.ref_name }}
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
