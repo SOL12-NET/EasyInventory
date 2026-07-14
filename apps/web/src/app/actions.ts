@@ -7,11 +7,17 @@ import { cookies, headers } from "next/headers";
 import crypto from "crypto";
 import { generateRandomPassword } from "@/lib/auth-helpers";
 
+let fallbackSecret: string | null = null;
+
 function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is not defined!");
+      if (!fallbackSecret) {
+        fallbackSecret = crypto.randomBytes(32).toString("hex");
+        console.warn("CRITICAL WARNING: SESSION_SECRET environment variable is not defined! A secure random key was generated in-memory as a fallback. Sessions will be invalidated upon server restart.");
+      }
+      return fallbackSecret;
     }
     return "development-only-fallback-session-secret-key-32-bytes-long";
   }
