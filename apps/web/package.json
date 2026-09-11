@@ -17,7 +17,7 @@
     "clsx": "2.1.1",
     "drizzle-orm": "0.45.2",
     "lucide-react": "0.554.0",
-    "next": "16.2.6",
+    "next": "16.3.4",
     "pg": "8.16.3",
     "react": "19.2.6",
     "react-dom": "19.2.6",
@@ -33,9 +33,9 @@
     "@vitejs/plugin-react": "5.1.1",
     "bcryptjs": "^3.0.3",
     "typescript": "5.9.3",
-    "vitest": "4.0.14"
+    "vitest": "4.1.11"
   },
   "overrides": {
-    "postcss": "8.5.10"
+    "postcss": "8.5.28"
   }
 }
